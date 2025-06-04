@@ -1,6 +1,5 @@
 import React from 'react';
 import { Facebook, Twitter, Instagram, Linkedin, Phone, Mail, MapPin } from 'lucide-react';
-import logo from '../../../Images/EZZOlogo.jpeg';
 
 const Footer = () => {
   return (
@@ -8,18 +7,31 @@ const Footer = () => {
       <div className="max-w-7xl mx-auto">
         {/* Main Footer Content */}
         <div className="flex flex-col md:flex-row gap-8 md:gap-12 lg:gap-20 mb-10">
-          
+
           {/* Left Section */}
           <div className="md:w-2/5 lg:w-2/5">
             <div className="mb-4 flex items-center space-x-3">
-              <img 
-                src={logo} 
-                alt="Ezzo Mart Logo" 
-                className="h-10 w-auto" 
-              />
-              <h1 className="text-xl font-bold text-white tracking-wide h-10 flex items-center">
-                Mart
-              </h1>
+<h1 class="flex items-center space-x-2 select-none cursor-default">
+  <span class="text-3xl sm:text-4xl font-extrabold 
+              bg-gradient-to-r from-orange-500 via-amber-400 to-red-600 
+              text-transparent bg-clip-text 
+              drop-shadow-lg 
+              hover:scale-105 hover:rotate-1 hover:brightness-110
+              transition-all duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1.5)]
+              animate-[gradient-x_8s_ease_infinite] 
+              bg-[length:200%_auto]">
+    EZZO
+  </span>
+  <span class="text-xl sm:text-2xl font-semibold text-white 
+             drop-shadow-md relative group">
+    Mart
+    <span class="absolute bottom-0 left-0 w-0 h-0.5 
+                bg-gradient-to-r from-amber-400 to-orange-500 
+                transition-all duration-500 group-hover:w-full"></span>
+  </span>
+</h1>
+
+
             </div>
 
             <p className="text-gray-400 mb-6 text-sm sm:text-base">

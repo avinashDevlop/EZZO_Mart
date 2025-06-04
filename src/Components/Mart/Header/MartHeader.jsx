@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Search, ShoppingCart, Menu, X, Sparkles } from 'lucide-react';
-import logo from '../../../Images/EZZOlogo.jpeg'
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -9,13 +8,17 @@ const Header = () => {
   const [isHoveringCart, setIsHoveringCart] = useState(false);
 
   const navigationItems = [
-    { name: 'Cement', icon: '🏗️' },
-    { name: 'Bricks', icon: '🧱' },
-    { name: 'Tiles', icon: '⬜' },
-    { name: 'Steel', icon: '⚡' },
-    { name: 'Tools', icon: '🔧' },
-    { name: 'Paint', icon: '🎨' }
-  ];
+  { name: 'Ready-Mix Concrete', icon: '🛣️' },
+  { name: 'Cement', icon: '🏗️' },
+  { name: 'Bricks', icon: '🧱' },
+  { name: 'Tiles', icon: '⬜' },
+  { name: 'Steel', icon: '⚡' },
+  { name: 'Tools', icon: '🔧' },
+  { name: 'Paint', icon: '🎨' },
+  { name: 'Electrical', icon: '💡' },
+  { name: 'Plumbing', icon: '🚿' },
+  { name: 'Furniture', icon: '🪑' }
+];
 
   useEffect(() => {
     const handleScroll = () => {
@@ -54,18 +57,16 @@ const Header = () => {
             {/* Logo with enhanced animation */}
             <div className="flex-shrink-0 group">
               <div className="relative">
-                <h1 className="flex items-center text-white text-[22px] font-bold tracking-wide transform transition-all duration-300 group-hover:scale-[1.02] cursor-pointer">
+         <h1 className="flex items-center text-white font-bold tracking-wide transform transition-all duration-300 group-hover:scale-[1.02] cursor-pointer">
   <span className="flex items-center space-x-2">
-    <img
-      src={logo}
-      alt="Ezzo Mart Logo"
-      className="h-[70px] w-[70px] object-contain transition-transform duration-300 group-hover:scale-110"
-    />
-    <span className="bg-gradient-to-r from-white to-yellow-100 bg-clip-text text-transparent font-bold text-[22px]">
+    <span className="text-3xl sm:text-4xl font-extrabold bg-gradient-to-r from-orange-400 via-amber-300 to-yellow-200 text-transparent bg-clip-text">
+      EZZO
+    </span>
+    <span className="bg-gradient-to-r from-white to-yellow-100 bg-clip-text text-transparent font-bold text-2xl">
       Mart
     </span>
   </span>
-  <Sparkles className="ml-2 h-[18px] w-[18px] text-yellow-300 animate-pulse group-hover:animate-spin group-hover:duration-1000" />
+  <Sparkles className="ml-2 h-5 w-5 text-yellow-300 animate-pulse group-hover:animate-spin group-hover:duration-1000" />
 </h1>
 
                 <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400/20 to-red-400/20 rounded-md blur opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
@@ -194,7 +195,7 @@ const Header = () => {
                   className="text-white hover:text-yellow-200 hover:bg-red-800/40 px-4 py-2.5 text-[13px] font-medium transition-all duration-300 border-r border-red-700/20 last:border-r-0 relative group overflow-hidden"
                 >
                   <span className="flex items-center space-x-1.5 relative z-10">
-                    <span className="text-[16px] transform transition-transform duration-300 group-hover:scale-125">{item.icon}</span>
+                    <span className="text-[19px] transform transition-transform duration-300 group-hover:scale-125">{item.icon}</span>
                     <span>{item.name}</span>
                   </span>
                   <div className="absolute bottom-0 left-0 w-0 h-[1.5px] bg-gradient-to-r from-yellow-300 to-orange-400 transition-all duration-500 group-hover:w-full"></div>
