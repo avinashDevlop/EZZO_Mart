@@ -219,9 +219,10 @@ const Header = () => {
                 <div className="text-center group">
                   <div className="inline-flex flex-col items-center justify-center leading-none transform transition-all duration-300 group-hover:scale-[1.02] cursor-pointer">
                     <div className="flex items-center space-x-2">
-                      <span className="text-3xl sm:text-4xl font-extrabold text-white drop-shadow-lg hover:drop-shadow-xl transition-all duration-300">
-                        EZZO
-                      </span>
+                      <span className="text-4xl sm:text-5xl font-extrabold text-white drop-shadow-lg hover:drop-shadow-xl transition-all duration-300">
+  EZZO
+</span>
+
                       <span className="text-white font-bold text-lg self-end hover:text-amber-100 transition-colors duration-300">
                         Mart
                       </span>

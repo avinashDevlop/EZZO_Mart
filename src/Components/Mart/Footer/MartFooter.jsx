@@ -21,9 +21,10 @@ const Footer = () => {
               {/* Title */}
               <h1 className="flex items-center space-x-2 cursor-default">
                 {/* EZZO in white */}
-                <span className="text-3xl sm:text-4xl font-extrabold text-white drop-shadow-lg">
-                  EZZO
-                </span>
+                <span className="text-5xl sm:text-6xl font-extrabold text-white drop-shadow-lg">
+  EZZO
+</span>
+
 
                 {/* Mart smaller and bottom-aligned */}
                 <span className="text-sm sm:text-base font-semibold text-white self-end relative group">
