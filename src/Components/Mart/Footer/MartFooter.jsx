@@ -20,33 +20,24 @@ const Footer = () => {
             <div className="mb-4 flex flex-col items-center space-y-1 select-none">
               {/* Title */}
               <h1 className="flex items-center space-x-2 cursor-default">
-                <span
-                  className="text-3xl sm:text-4xl font-extrabold 
-        bg-gradient-to-r from-orange-500 via-amber-400 to-red-600 
-        text-transparent bg-clip-text 
-        drop-shadow-lg 
-        hover:scale-105 hover:rotate-1 hover:brightness-110
-        transition-all duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1.5)]
-        animate-[gradient-x_8s_ease_infinite] 
-        bg-[length:200%_auto]"
-                >
+                {/* EZZO in white */}
+                <span className="text-3xl sm:text-4xl font-extrabold text-white drop-shadow-lg">
                   EZZO
                 </span>
-                <span
-                  className="text-xl sm:text-2xl font-semibold text-white 
-        drop-shadow-md relative group"
-                >
+
+                {/* Mart smaller and bottom-aligned */}
+                <span className="text-sm sm:text-base font-semibold text-white self-end relative group">
                   Mart
                   <span
                     className="absolute bottom-0 left-0 w-0 h-0.5 
-          bg-gradient-to-r from-amber-400 to-orange-500 
-          transition-all duration-500 group-hover:w-full"
+        bg-gradient-to-r from-amber-400 to-orange-500 
+        transition-all duration-500 group-hover:w-full"
                   ></span>
                 </span>
               </h1>
 
               {/* Tagline */}
-              <span className="text-[11px] sm:text-xs text-amber-100 italic tracking-wide leading-none">
+              <span className="text-[13px] sm:text-[13px] text-amber-100 italic tracking-wide m-0 p-0">
                 into sustainability
               </span>
             </div>

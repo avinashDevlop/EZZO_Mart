@@ -573,7 +573,7 @@ const Home = () => {
         <div className="container mx-auto px-4">
           <div className="text-center mb-10">
             <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">
-              Featured Products
+              Customer Favorites
             </h2>
             <p className="text-gray-600 md:text-lg">
               Top-rated tools and equipment
@@ -691,27 +691,27 @@ const Home = () => {
       </div>
 
       {/* CTA Section */}
-      <div className="py-16 sm:py-20 bg-gradient-to-r from-red-800 via-red-700 to-orange-700">
-        <div className="container mx-auto px-4 sm:px-6 text-center">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-6">
-            Ready to Build Something Amazing?
-          </h2>
-          <p className="text-lg sm:text-xl text-gray-200 mb-8 max-w-2xl mx-auto">
-            Join thousands of professionals who trust EZZO Mart for their
-            construction needs. Start your project with the right tools today.
-          </p>
-          <div className="flex flex-row flex-wrap justify-center gap-3 sm:gap-4">
-            <button className="bg-white text-red-800 px-5 py-3 sm:px-7 sm:py-3 rounded-full font-semibold text-sm sm:text-base hover:bg-gray-100 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center whitespace-nowrap min-w-[180px]">
-              <Users className="inline mr-2" size={16} />
-              Become a Vendor
-            </button>
-            <button className="bg-transparent border-2 border-white text-white px-5 py-3 sm:px-7 sm:py-3 rounded-full font-semibold text-sm sm:text-base hover:bg-white hover:text-red-800 transition-all duration-300 flex items-center whitespace-nowrap min-w-[180px]">
-              <Package className="inline mr-2" size={16} />
-              Browse Products
-            </button>
-          </div>
-        </div>
-      </div>
+      <div className="py-16 sm:py-20 bg-gradient-to-r from-amber-800 via-amber-700 to-amber-600">
+  <div className="container mx-auto px-4 sm:px-6 text-center">
+    <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-6">
+      Ready to Build Something Amazing?
+    </h2>
+    <p className="text-lg sm:text-xl text-amber-100 mb-8 max-w-2xl mx-auto">
+      Join thousands of professionals who trust EZZO Mart for their
+      construction needs. Start your project with the right tools today.
+    </p>
+    <div className="flex flex-row flex-wrap justify-center gap-3 sm:gap-4">
+      <button className="bg-white text-amber-800 px-5 py-3 sm:px-7 sm:py-3 rounded-full font-semibold text-sm sm:text-base hover:bg-gray-100 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center whitespace-nowrap min-w-[180px]">
+        <Users className="inline mr-2" size={16} />
+        Become a Vendor
+      </button>
+      <button className="bg-transparent border-2 border-white text-white px-5 py-3 sm:px-7 sm:py-3 rounded-full font-semibold text-sm sm:text-base hover:bg-white hover:text-amber-800 transition-all duration-300 flex items-center whitespace-nowrap min-w-[180px]">
+        <Package className="inline mr-2" size={16} />
+        Browse Products
+      </button>
+    </div>
+  </div>
+</div>
     </div>
   );
 };
