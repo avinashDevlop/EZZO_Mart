@@ -8,6 +8,7 @@ import {
   Mail,
   MapPin,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Footer = () => {
   return (
@@ -17,22 +18,24 @@ const Footer = () => {
         <div className="flex flex-col md:flex-row gap-8 md:gap-12 lg:gap-20 mb-10">
           {/* Left Section */}
           <div className="md:w-2/5 lg:w-2/5">
-            <div className="mb-4 flex flex-col items-center space-y-1 select-none">
+            <Link
+              to="/admin-login"
+              className="mb-4 flex flex-col items-center space-y-1 select-none cursor-pointer"
+            >
               {/* Title */}
-              <h1 className="flex items-center space-x-2 cursor-default">
+              <h1 className="flex items-center space-x-2">
                 {/* EZZO in white */}
                 <span className="text-5xl sm:text-6xl font-extrabold text-white drop-shadow-lg">
-  EZZO
-</span>
-
+                  EZZO
+                </span>
 
                 {/* Mart smaller and bottom-aligned */}
                 <span className="text-sm sm:text-base font-semibold text-white self-end relative group">
                   Mart
                   <span
                     className="absolute bottom-0 left-0 w-0 h-0.5 
-        bg-gradient-to-r from-amber-400 to-orange-500 
-        transition-all duration-500 group-hover:w-full"
+          bg-gradient-to-r from-amber-400 to-orange-500 
+          transition-all duration-500 group-hover:w-full"
                   ></span>
                 </span>
               </h1>
@@ -41,7 +44,7 @@ const Footer = () => {
               <span className="text-[13px] sm:text-[13px] text-amber-100 italic tracking-wide m-0 p-0">
                 into sustainability
               </span>
-            </div>
+            </Link>
 
             <p className="text-gray-400 mb-6 text-sm sm:text-base">
               Your trusted partner for construction tools and equipment since
