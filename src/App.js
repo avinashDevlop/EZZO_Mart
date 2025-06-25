@@ -18,6 +18,10 @@ import VendorDashboard from "./pages/Vendor/VendorDashboard";
 import AddProduct from "./pages/Vendor/Products/AddProducts";
 import ViewProducts from "./pages/Vendor/Products/ViewProducts";
 import VendorNewOrders from "./pages/Vendor/Orders/NewOrders";
+import VendorAcceptedOrders from "./pages/Vendor/Orders/AcceptedOrders";
+import VendorOutForDelivery from "./pages/Vendor/Orders/OutForDelivery";
+import VendorDeliveredOrders from "./pages/Vendor/Orders/DeliveredOrders";
+import VendorCancelledOrders from "./pages/Vendor/Orders/CanceledOrders";
 
 // Admin pages
 import AdminDashboard from "./pages/Admin/AdminDashboard";
@@ -55,6 +59,10 @@ function App() {
             <Route path="/vendor/products/view" element={<ViewProducts />} />
             {/* Orders */}
             <Route path="/vendor/orders/new" element={<VendorNewOrders />} />
+            <Route path="/vendor/orders/accepted" element={<VendorAcceptedOrders />} />
+            <Route path="/vendor/orders/delivery" element={<VendorOutForDelivery />} />
+            <Route path="/vendor/orders/delivered" element={<VendorDeliveredOrders />} />
+            <Route path="/vendor/orders/cancelled" element={<VendorCancelledOrders />} />
           </Route>
         </Route>
 

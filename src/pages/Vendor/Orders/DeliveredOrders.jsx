@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Clock,
+  CheckCircle,
   IndianRupee,
   Package,
   User,
@@ -9,40 +9,154 @@ import {
   Phone,
   Calendar,
   Loader2,
-  AlertCircle,
   Mail,
-  Check,
-  X
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  Printer,
+  Save
 } from 'lucide-react';
-import { getDatabase, ref, onValue, update } from 'firebase/database';
+import { getDatabase, ref, onValue } from 'firebase/database';
 import { motion, AnimatePresence } from 'framer-motion';
+import { PDFDownloadLink, Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 
-const VendorNewOrders = () => {
-  const [newOrders, setNewOrders] = useState([]);
+// PDF Document Component
+const OrderPDFDocument = ({ order, customerInfo }) => {
+  const itemCount = Object.keys(order.items || {}).length;
+  const totalItems = Object.values(order.items || {}).reduce((sum, item) => {
+    return sum + (item.noOfItems || item.quantity || 1);
+  }, 0);
+
+  return (
+    <Document>
+      <Page style={styles.page}>
+        <View style={styles.section}>
+          <Text style={styles.header}>Order #{order.id.slice(-6).toUpperCase()}</Text>
+          <Text style={styles.subHeader}>Delivered on: {order.deliveredAt.toLocaleDateString()}</Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Customer Information</Text>
+          <Text>Name: {customerInfo.name}</Text>
+          <Text>Email: {customerInfo.email}</Text>
+          <Text>Phone: {customerInfo.phone}</Text>
+          <Text>Address: {customerInfo.address}</Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Order Summary</Text>
+          <Text>Items: {itemCount} ({totalItems} units)</Text>
+          <Text>Payment Method: {order.paymentMethod || 'Unknown'}</Text>
+          <Text>Total: ₹{order.total?.toFixed(2) || '0.00'}</Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Order Items</Text>
+          {Object.entries(order.items || {}).map(([key, item]) => {
+            const quantity = item.noOfItems || item.quantity || 1;
+            return (
+              <View key={key} style={styles.itemRow}>
+                <Text style={styles.itemName}>{item.productName || 'Unnamed Product'}</Text>
+                <Text style={styles.itemDetails}>
+                  {item.category || 'General'} • {quantity} {item.unit || 'unit'}
+                  {item.variantDetails && ` • ${item.variantDetails}`}
+                </Text>
+                <Text style={styles.itemPrice}>₹{(item.price * quantity).toFixed(2)}</Text>
+              </View>
+            );
+          })}
+        </View>
+
+        <View style={styles.footer}>
+          <Text>Thank you for your order!</Text>
+        </View>
+      </Page>
+    </Document>
+  );
+};
+
+// PDF Styles
+const styles = StyleSheet.create({
+  page: {
+    padding: 30,
+    fontFamily: 'Helvetica'
+  },
+  section: {
+    marginBottom: 20
+  },
+  header: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 5
+  },
+  subHeader: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 15
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    borderBottom: '1 solid #eee',
+    paddingBottom: 3
+  },
+  itemRow: {
+    marginBottom: 8,
+    paddingBottom: 8,
+    borderBottom: '1 solid #f0f0f0'
+  },
+  itemName: {
+    fontSize: 12,
+    fontWeight: 'bold'
+  },
+  itemDetails: {
+    fontSize: 10,
+    color: '#666',
+    marginTop: 2
+  },
+  itemPrice: {
+    fontSize: 12,
+    marginTop: 4,
+    textAlign: 'right'
+  },
+  footer: {
+    marginTop: 20,
+    paddingTop: 10,
+    borderTop: '1 solid #eee',
+    textAlign: 'center',
+    fontSize: 10,
+    color: '#999'
+  }
+});
+
+const VendorDeliveredOrders = () => {
+  const [deliveredOrders, setDeliveredOrders] = useState([]);
   const [customerDetails, setCustomerDetails] = useState({});
   const [loading, setLoading] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState(null);
-  const [processingOrder, setProcessingOrder] = useState(null);
-  const [notification, setNotification] = useState({ show: false, message: '', type: '' });
+  // const [pdfLoading, setPdfLoading] = useState(null);
   const business = localStorage.getItem("vendorBusiness");
+  const printRef = useRef({});
 
   useEffect(() => {
     if (!business) return;
 
     const db = getDatabase();
-    const newOrdersRef = ref(db, `Vendors/${business}/Orders/New Orders`);
+    const deliveredOrdersRef = ref(db, `Vendors/${business}/Orders/Delivered Orders`);
 
     setLoading(true);
-    const unsubscribe = onValue(newOrdersRef, (snapshot) => {
+    const unsubscribe = onValue(deliveredOrdersRef, (snapshot) => {
       const ordersData = snapshot.val();
       if (ordersData) {
         const ordersArray = Object.entries(ordersData).map(([key, value]) => ({
           id: key,
           ...value,
-          createdAt: value.createdAt ? new Date(value.createdAt) : new Date()
-        })).sort((a, b) => b.createdAt - a.createdAt);
+          createdAt: value.createdAt ? new Date(value.createdAt) : new Date(),
+          deliveredAt: value.deliveredAt ? new Date(value.deliveredAt) : new Date()
+        })).sort((a, b) => b.deliveredAt - a.deliveredAt);
         
-        setNewOrders(ordersArray);
+        setDeliveredOrders(ordersArray);
         
         // Fetch customer details for all orders
         ordersArray.forEach(order => {
@@ -58,75 +172,13 @@ const VendorNewOrders = () => {
           }
         });
       } else {
-        setNewOrders([]);
+        setDeliveredOrders([]);
       }
       setLoading(false);
     });
 
     return () => unsubscribe();
   }, [business, customerDetails]);
-
-  // Show notification
-  const showNotification = (message, type) => {
-    setNotification({ show: true, message, type });
-    setTimeout(() => setNotification({ show: false, message: '', type: '' }), 3000);
-  };
-
-  const updateOrderStatus = async (orderId, newStatus) => {
-  if (!business) return;
-
-  setProcessingOrder(orderId);
-  const db = getDatabase();
-  const order = newOrders.find(o => o.id === orderId);
-  
-  if (!order) {
-    console.error("Order not found");
-    setProcessingOrder(null);
-    return;
-  }
-
-  try {
-    // Create the updated order object with new status
-    const updatedOrder = {
-      ...order,
-      status: newStatus,
-      updatedAt: Date.now()
-    };
-
-    // Create updates object for atomic updates
-    const updates = {};
-    
-    // Remove from New Orders
-    updates[`Vendors/${business}/Orders/New Orders/${orderId}`] = null;
-    
-    // Add to the new status category
-    updates[`Vendors/${business}/Orders/${newStatus}/${orderId}`] = updatedOrder;
-    
-    // Update customer's order status if customerId exists
-    if (order.customerId) {
-      updates[`Users/${order.customerId}/Orders/${orderId}/status`] = newStatus;
-      updates[`Users/${order.customerId}/Orders/${orderId}/updatedAt`] = Date.now();
-    }
-
-    // Perform all updates atomically
-    await update(ref(db), updates);
-
-    // Show success notification
-    showNotification(
-      `Order ${orderId.slice(-6).toUpperCase()} moved to ${newStatus.replace(' Orders', '')}`,
-      'success'
-    );
-    
-    // Close the expanded view if open
-    setExpandedOrder(null);
-    
-  } catch (error) {
-    console.error("Error updating order status: ", error);
-    showNotification('Failed to update order status', 'error');
-  } finally {
-    setProcessingOrder(null);
-  }
-};
 
   const getTimeAgo = (date) => {
     const seconds = Math.floor((new Date() - date) / 1000);
@@ -151,55 +203,60 @@ const VendorNewOrders = () => {
     return { address, phone, email, name };
   };
 
+  const printOrder = (orderId) => {
+    const content = printRef.current[orderId];
+    if (!content) return;
+
+    const printWindow = window.open('', '', 'width=800,height=600');
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Print Order Summary</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            h2 { font-size: 18px; margin-bottom: 10px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            td, th { border: 1px solid #ccc; padding: 8px; text-align: left; }
+            .section { margin-bottom: 20px; }
+          </style>
+        </head>
+        <body>
+          ${content.innerHTML}
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-green-500" />
       </div>
     );
   }
 
   return (
-    <div className="pb-4 relative">
-      {/* Notification */}
-      <AnimatePresence>
-        {notification.show && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-4 py-2 rounded-md shadow-md flex items-center ${
-              notification.type === 'success' 
-                ? 'bg-green-100 text-green-800' 
-                : 'bg-red-100 text-red-800'
-            }`}
-          >
-            {notification.type === 'success' ? (
-              <Check className="h-4 w-4 mr-2" />
-            ) : (
-              <X className="h-4 w-4 mr-2" />
-            )}
-            {notification.message}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
+    <div className="pb-4">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-gray-800 flex items-center">
-          <AlertCircle className="h-5 w-5 text-amber-500 mr-2" />
-          New Orders ({newOrders.length})
+          <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
+          Delivered Orders ({deliveredOrders.length})
         </h2>
       </div>
 
-      {newOrders.length === 0 ? (
+      {deliveredOrders.length === 0 ? (
         <div className="bg-white rounded-lg p-6 text-center">
           <Package className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-          <h3 className="text-gray-500 font-medium">No new orders at the moment</h3>
-          <p className="text-sm text-gray-400 mt-1">New orders will appear here</p>
+          <h3 className="text-gray-500 font-medium">No delivered orders yet</h3>
+          <p className="text-sm text-gray-400 mt-1">Completed orders will appear here</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {newOrders.map((order) => {
+          {deliveredOrders.map((order) => {
             const itemCount = Object.keys(order.items || {}).length;
             const totalItems = Object.values(order.items || {}).reduce((sum, item) => {
               return sum + (item.noOfItems || item.quantity || 1);
@@ -216,30 +273,37 @@ const VendorNewOrders = () => {
               >
                 <div 
                   className={`p-4 flex justify-between items-center cursor-pointer ${
-                    expandedOrder === order.id ? 'bg-amber-50' : ''
+                    expandedOrder === order.id ? 'bg-green-50' : ''
                   }`}
                   onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
                 >
                   <div className="flex items-center space-x-3">
-                    <div className="h-10 w-10 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center">
-                      <Clock className="h-5 w-5" />
+                    <div className="h-10 w-10 rounded-full bg-green-100 text-green-800 flex items-center justify-center">
+                      <CheckCircle className="h-5 w-5" />
                     </div>
                     <div>
                       <h3 className="font-medium text-gray-900">Order #{order.id.slice(-6).toUpperCase()}</h3>
                       <p className="text-xs text-gray-500 flex items-center">
                         <Calendar className="h-3 w-3 mr-1" />
-                        {getTimeAgo(order.createdAt)}
+                        Delivered {getTimeAgo(order.deliveredAt)}
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-medium text-gray-900 flex items-center justify-end">
-                      <IndianRupee className="h-3 w-3 mr-1" />
-                      {order.total?.toFixed(2) || '0.00'}
-                    </p>
-                    <p className="text-xs text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">
-                      New Order
-                    </p>
+                  <div className="flex items-center space-x-4">
+                    <div className="text-right">
+                      <p className="font-medium text-gray-900 flex items-center justify-end">
+                        <IndianRupee className="h-3 w-3 mr-1" />
+                        {order.total?.toFixed(2) || '0.00'}
+                      </p>
+                      <p className="text-xs text-green-600 bg-green-100 px-2 py-0.5 rounded-full">
+                        Delivered
+                      </p>
+                    </div>
+                    {expandedOrder === order.id ? (
+                      <ChevronUp className="h-5 w-5 text-gray-400" />
+                    ) : (
+                      <ChevronDown className="h-5 w-5 text-gray-400" />
+                    )}
                   </div>
                 </div>
 
@@ -252,7 +316,40 @@ const VendorNewOrders = () => {
                       transition={{ duration: 0.2 }}
                       className="overflow-hidden"
                     >
-                      <div className="px-4 pb-4 space-y-4">
+                      <div 
+                        ref={el => printRef.current[order.id] = el}
+                        className="px-4 pb-4 space-y-4"
+                      >
+                        {/* Delivery Timeline */}
+                        <div className="bg-green-50 rounded-lg p-3 border border-green-100">
+                          <h4 className="text-sm font-medium text-green-900 mb-2 flex items-center">
+                            <Clock className="h-4 w-4 mr-2" />
+                            Order Timeline
+                          </h4>
+                          <div className="space-y-2 text-sm text-green-800">
+                            <div className="flex justify-between">
+                              <span>Order placed:</span>
+                              <span>{order.createdAt.toLocaleString()}</span>
+                            </div>
+                            {order.acceptedAt && (
+                              <div className="flex justify-between">
+                                <span>Order accepted:</span>
+                                <span>{new Date(order.acceptedAt).toLocaleString()}</span>
+                              </div>
+                            )}
+                            {order.outForDeliveryAt && (
+                              <div className="flex justify-between">
+                                <span>Dispatched:</span>
+                                <span>{new Date(order.outForDeliveryAt).toLocaleString()}</span>
+                              </div>
+                            )}
+                            <div className="flex justify-between font-medium">
+                              <span>Delivered:</span>
+                              <span>{order.deliveredAt.toLocaleString()}</span>
+                            </div>
+                          </div>
+                        </div>
+
                         {/* Order Summary */}
                         <div className="bg-gray-50 rounded-lg p-3">
                           <h4 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
@@ -346,39 +443,31 @@ const VendorNewOrders = () => {
                           </div>
                         </div>
 
-                        {/* Status Actions */}
-                        <div className="pt-2">
-                          <h4 className="text-sm font-medium text-gray-900 mb-2">Process Order</h4>
-                          <div className="grid grid-cols-2 gap-2">
-                            <button
-                              onClick={() => updateOrderStatus(order.id, 'Accepted Orders')}
-                              disabled={processingOrder === order.id}
-                              className={`py-2 rounded-lg text-sm font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors flex items-center justify-center ${
-                                processingOrder === order.id ? 'opacity-70' : ''
-                              }`}
-                            >
-                              {processingOrder === order.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                              ) : (
-                                <Check className="h-4 w-4 mr-2" />
-                              )}
-                              Accept Order
-                            </button>
-                            <button
-                              onClick={() => updateOrderStatus(order.id, 'Cancelled Orders')}
-                              disabled={processingOrder === order.id}
-                              className={`py-2 rounded-lg text-sm font-medium bg-red-100 text-red-800 hover:bg-red-200 transition-colors flex items-center justify-center ${
-                                processingOrder === order.id ? 'opacity-70' : ''
-                              }`}
-                            >
-                              {processingOrder === order.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                              ) : (
-                                <X className="h-4 w-4 mr-2" />
-                              )}
-                              Cancel Order
-                            </button>
-                          </div>
+                        {/* Actions */}
+                        <div className="pt-2 flex space-x-2">
+                          <button
+                            onClick={() => printOrder(order.id)}
+                            className="flex-1 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-800 hover:bg-gray-200 transition-colors flex items-center justify-center"
+                          >
+                            <Printer className="h-4 w-4 mr-2" />
+                            Print
+                          </button>
+                          <PDFDownloadLink
+                            document={<OrderPDFDocument order={order} customerInfo={customerInfo} />}
+                            fileName={`order_${order.id.slice(-6).toUpperCase()}.pdf`}
+                            className="flex-1 py-2 rounded-lg text-sm font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors flex items-center justify-center"
+                          >
+                            {({ loading }) => (
+                              <>
+                                {loading ? (
+                                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                ) : (
+                                  <Save className="h-4 w-4 mr-2" />
+                                )}
+                                {loading ? 'Generating...' : 'Save as PDF'}
+                              </>
+                            )}
+                          </PDFDownloadLink>
                         </div>
                       </div>
                     </motion.div>
@@ -393,4 +482,4 @@ const VendorNewOrders = () => {
   );
 };
 
-export default VendorNewOrders;
+export default VendorDeliveredOrders;

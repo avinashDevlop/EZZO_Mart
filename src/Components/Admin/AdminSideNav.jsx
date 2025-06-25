@@ -9,7 +9,6 @@ import {
   BarChart3,
   Eye,
   Plus,
-  FolderOpen,
   Shield,
   UserCheck,
   UserX,

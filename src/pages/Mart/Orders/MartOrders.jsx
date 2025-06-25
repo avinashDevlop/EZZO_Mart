@@ -1,36 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  ShoppingBag, 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
-  Truck, 
+import {
+  Clock,
+  CheckCircle,
+  Truck,
+  XCircle,
+  Package,
+  IndianRupee,
+  Calendar,
+  Loader2,
   ChevronDown,
   ChevronUp,
-  IndianRupee,
-  Package,
   CreditCard,
-  User,
-  MapPin,
-  Phone,
-  Calendar,
-  Loader2
 } from 'lucide-react';
-import { getDatabase, ref, onValue, update } from 'firebase/database';
+import { getDatabase, ref, onValue } from 'firebase/database';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const MartOrdersPage = ({ isVendor = false }) => {
+const CustomerOrders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [activeTab, setActiveTab] = useState('all');
-  const userId = localStorage.getItem(isVendor ? 'vendorId' : 'customerId');
+  const userId = localStorage.getItem('customerId');
+
+  useEffect(() => {
+      window.scrollTo(0, 0);
+    }, []);
 
   useEffect(() => {
     if (!userId) return;
 
     const db = getDatabase();
-    const ordersRef = ref(db, `${isVendor ? 'Vendors' : 'Users'}/${userId}/Orders${isVendor ? '/New Orders' : ''}`);
+    const ordersRef = ref(db, `Users/${userId}/Orders`);
 
     setLoading(true);
     const unsubscribe = onValue(ordersRef, (snapshot) => {
@@ -39,8 +39,10 @@ const MartOrdersPage = ({ isVendor = false }) => {
         const ordersArray = Object.entries(ordersData).map(([key, value]) => ({
           id: key,
           ...value,
-          createdAt: value.createdAt ? new Date(value.createdAt) : new Date()
+          createdAt: value.createdAt ? new Date(value.createdAt) : new Date(),
+          updatedAt: value.updatedAt ? new Date(value.updatedAt) : null
         })).sort((a, b) => b.createdAt - a.createdAt);
+
         setOrders(ordersArray);
       } else {
         setOrders([]);
@@ -49,159 +51,210 @@ const MartOrdersPage = ({ isVendor = false }) => {
     });
 
     return () => unsubscribe();
-  }, [userId, isVendor]);
+  }, [userId]);
 
   const filteredOrders = orders.filter(order => {
     if (activeTab === 'all') return true;
     return order.status === activeTab;
   });
 
-  const updateOrderStatus = async (orderId, newStatus) => {
-    if (!userId) return;
-
-    const db = getDatabase();
-    const orderRef = ref(db, `Vendors/${userId}/Orders/New Orders/${orderId}`);
-
-    try {
-      await update(orderRef, { status: newStatus });
-      
-      // Also update the customer's order status
-      const order = orders.find(o => o.id === orderId);
-      if (order && order.customerId) {
-        const customerOrderRef = ref(db, `Users/${order.customerId}/Orders/${orderId}`);
-        await update(customerOrderRef, { status: newStatus });
-      }
-    } catch (error) {
-      console.error("Error updating order status: ", error);
-    }
-  };
-
   const getStatusDetails = (status) => {
     switch (status) {
-      case 'pending':
-        return { icon: <Clock className="h-4 w-4" />, color: 'bg-amber-100 text-amber-800', text: 'Pending' };
-      case 'processing':
-        return { icon: <Truck className="h-4 w-4" />, color: 'bg-blue-100 text-blue-800', text: 'Processing' };
-      case 'completed':
-        return { icon: <CheckCircle className="h-4 w-4" />, color: 'bg-green-100 text-green-800', text: 'Completed' };
-      case 'cancelled':
-        return { icon: <XCircle className="h-4 w-4" />, color: 'bg-red-100 text-red-800', text: 'Cancelled' };
+      case 'Pending':
+        return {
+          color: 'bg-amber-100 text-amber-800',
+          icon: <Clock className="h-4 w-4" />,
+          progress: 25,
+          displayName: 'Pending'
+        };
+      case 'Accepted Orders':
+        return {
+          color: 'bg-blue-100 text-blue-800',
+          icon: <CheckCircle className="h-4 w-4" />,
+          progress: 50,
+          displayName: 'Accepted'
+        };
+      case 'Out for Delivery':
+        return {
+          color: 'bg-blue-100 text-blue-800',
+          icon: <Truck className="h-4 w-4" />,
+          progress: 75,
+          displayName: 'Out for Delivery'
+        };
+      case 'Delivered Orders':
+        return {
+          color: 'bg-green-100 text-green-800',
+          icon: <Package className="h-4 w-4" />,
+          progress: 100,
+          displayName: 'Delivered'
+        };
+      case 'Cancelled Orders':
+        return {
+          color: 'bg-red-100 text-red-800',
+          icon: <XCircle className="h-4 w-4" />,
+          progress: 0,
+          displayName: 'Cancelled'
+        };
       default:
-        return { icon: <Clock className="h-4 w-4" />, color: 'bg-gray-100 text-gray-800', text: 'Unknown' };
+        return {
+          color: 'bg-gray-100 text-gray-800',
+          icon: <Package className="h-4 w-4" />,
+          progress: 0,
+          displayName: status || 'Unknown'
+        };
     }
   };
 
-  const toggleOrderExpand = (orderId) => {
-    setExpandedOrder(expandedOrder === orderId ? null : orderId);
+  const OrderProgressBar = ({ status }) => {
+    const { progress } = getStatusDetails(status);
+    const steps = [
+      { name: 'Pending', value: 25 },
+      { name: 'Accepted', value: 50 },
+      { name: 'Out for Delivery', value: 75 },
+      { name: 'Delivered', value: 100 }
+    ];
+
+    return (
+      <div className="mt-4">
+        <div className="relative pt-1">
+          <div className="flex mb-2 items-center justify-between">
+            <div>
+              <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blue-600 bg-blue-200">
+                {getStatusDetails(status).displayName}
+              </span>
+            </div>
+            <div className="text-right">
+              <span className="text-xs font-semibold inline-block text-blue-600">
+                {progress}%
+              </span>
+            </div>
+          </div>
+          <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-blue-200">
+            <div
+              style={{ width: `${progress}%` }}
+              className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-500 transition-all duration-500"
+            ></div>
+          </div>
+          <div className="flex justify-between text-xs text-gray-600">
+            {steps.map((step) => (
+              <div
+                key={step.name}
+                className={`flex flex-col items-center ${progress >= step.value ? 'text-blue-600 font-medium' : ''}`}
+              >
+                <div className={`w-3 h-3 rounded-full ${progress >= step.value ? 'bg-blue-600' : 'bg-gray-300'} mb-1`}></div>
+                <span className="hidden sm:inline">{step.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
+      <div className="flex justify-center items-center min-h-[300px]">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto pb-20 px-2 sm:px-4 mt-4 sm:mt-10 min-h-[100vh]">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-white shadow-sm">
-        <div className="p-3 sm:p-4 border-b">
-          <h1 className="text-lg sm:text-xl font-bold text-gray-900 flex items-center">
-            <ShoppingBag className="mr-2 h-5 w-5" />
-            {isVendor ? 'Mart Orders' : 'My Orders'}
-          </h1>
+    <div className="pb-8 px-2 sm:px-4 mt-10 min-h-[100px]">
+      <div className="max-w-6xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-800">My Orders</h1>
+          <p className="text-gray-500 mt-1">Track and manage all your orders</p>
         </div>
 
-        {/* Status Tabs */}
-        <div className="flex overflow-x-auto scrollbar-hide px-1 sm:px-2">
-          <button
-            onClick={() => setActiveTab('all')}
-            className={`flex-shrink-0 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium ${
-              activeTab === 'all' ? 'text-amber-600 border-b-2 border-amber-600' : 'text-gray-500'
-            }`}
-          >
-            All Orders
-          </button>
-          {['pending', 'processing', 'completed', 'cancelled'].map((status) => (
-            <button
-              key={status}
-              onClick={() => setActiveTab(status)}
-              className={`flex-shrink-0 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium capitalize ${
-                activeTab === status ? 'text-amber-600 border-b-2 border-amber-600' : 'text-gray-500'
-              }`}
-            >
-              {status}
-            </button>
-          ))}
+        {/* Order Status Tabs */}
+        <div className="mb-6">
+          <div className="w-full max-w-full overflow-x-auto pb-2 scrollbar-hide">
+            <div className="flex space-x-2 min-w-max">
+              <button
+                onClick={() => setActiveTab('all')}
+                className={`px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap flex-shrink-0 ${activeTab === 'all'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+              >
+                All Orders
+              </button>
+              {['Pending', 'Accepted Orders', 'Out for Delivery', 'Delivered Orders', 'Cancelled Orders'].map((status) => (
+                <button
+                  key={status}
+                  onClick={() => setActiveTab(status)}
+                  className={`px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap flex-shrink-0 ${activeTab === status
+                      ? `${getStatusDetails(status).color.replace('100', '600').replace('800', '100')} text-white`
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                >
+                  {getStatusDetails(status).displayName}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Orders List */}
-      <div className="p-2 sm:p-4 space-y-3 sm:space-y-4">
         {filteredOrders.length === 0 ? (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col items-center justify-center py-8 sm:py-12 text-center"
-          >
-            <Package className="h-10 sm:h-12 w-10 sm:w-12 text-gray-400 mb-3 sm:mb-4" />
-            <h3 className="text-base sm:text-lg font-medium text-gray-900">No orders found</h3>
-            <p className="text-gray-500 mt-1 text-sm sm:text-base">
-              {activeTab === 'all' ? "You don't have any orders yet" : `No ${activeTab} orders`}
-            </p>
-          </motion.div>
+          <div className="bg-white rounded-xl p-8 text-center shadow-sm border border-gray-100">
+            <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-500">No orders found</h3>
+            <p className="text-gray-400 mt-2">You don't have any {activeTab === 'all' ? '' : getStatusDetails(activeTab).displayName.toLowerCase()} orders yet</p>
+          </div>
         ) : (
-          <AnimatePresence>
+          <div className="space-y-4">
             {filteredOrders.map((order) => {
-              const status = getStatusDetails(order.status);
               const itemCount = Object.keys(order.items || {}).length;
               const totalItems = Object.values(order.items || {}).reduce((sum, item) => {
-                return sum + (item.noOfItems || item.quantity || 1);
+                return sum + (item.quantity || 1);
               }, 0);
+              const statusDetails = getStatusDetails(order.status);
 
               return (
                 <motion.div
                   key={order.id}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.2 }}
-                  className="bg-white rounded-lg sm:rounded-xl shadow-sm border border-gray-100 overflow-hidden"
+                  className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
                 >
-                  <div 
-                    className={`p-3 sm:p-4 flex justify-between items-center cursor-pointer ${
-                      expandedOrder === order.id ? 'bg-gray-50' : ''
-                    }`}
-                    onClick={() => toggleOrderExpand(order.id)}
+                  <div
+                    className={`p-4 sm:p-5 flex justify-between items-center cursor-pointer ${expandedOrder === order.id ? 'bg-gray-50' : ''
+                      }`}
+                    onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
                   >
-                    <div className="flex items-center space-x-2 sm:space-x-3">
-                      <div className={`h-8 sm:h-10 w-8 sm:w-10 rounded-full flex items-center justify-center ${status.color}`}>
-                        {status.icon}
+                    <div className="flex items-center space-x-3">
+                      <div className={`h-10 w-10 rounded-full ${statusDetails.color} flex items-center justify-center`}>
+                        {statusDetails.icon}
                       </div>
-                      <div className="max-w-[140px] sm:max-w-none">
-                        <h3 className="text-sm sm:text-base font-medium text-gray-900 truncate">
-                          Order #{order.id.slice(-6).toUpperCase()}
-                        </h3>
+                      <div>
+                        <h3 className="font-medium text-gray-900">Order #{order.id.slice(-6).toUpperCase()}</h3>
                         <p className="text-xs text-gray-500 flex items-center">
                           <Calendar className="h-3 w-3 mr-1" />
-                          {order.createdAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                          <span className="mx-1 hidden sm:inline">•</span>
-                          <span className="hidden sm:inline">
-                            {order.createdAt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                          </span>
+                          {order.createdAt.toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                          })}
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm sm:text-base font-medium text-gray-900 flex items-center justify-end">
-                        <IndianRupee className="h-3 w-3 mr-0.5 sm:mr-1" />
-                        {order.total?.toFixed(2) || '0.00'}
-                      </p>
-                      <div className={`text-xs px-2 py-0.5 rounded-full ${status.color} capitalize mt-1`}>
-                        {status.text}
+                    <div className="flex items-center space-x-4">
+                      <div className="text-right">
+                        <p className="font-medium text-gray-900 flex items-center justify-end">
+                          <IndianRupee className="h-3 w-3 mr-1" />
+                          {order.total?.toFixed(2) || '0.00'}
+                        </p>
+                        <p className={`text-xs ${statusDetails.color} px-2 py-0.5 rounded-full`}>
+                          {statusDetails.displayName}
+                        </p>
                       </div>
+                      {expandedOrder === order.id ? (
+                        <ChevronUp className="h-5 w-5 text-gray-400" />
+                      ) : (
+                        <ChevronDown className="h-5 w-5 text-gray-400" />
+                      )}
                     </div>
                   </div>
 
@@ -214,123 +267,101 @@ const MartOrdersPage = ({ isVendor = false }) => {
                         transition={{ duration: 0.2 }}
                         className="overflow-hidden"
                       >
-                        <div className="px-3 sm:px-4 pb-3 sm:pb-4 space-y-3 sm:space-y-4">
+                        <div className="px-4 sm:px-5 pb-5 space-y-5">
+                          {/* Order Tracking */}
+                          {order.status !== 'Cancelled Orders' && (
+                            <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
+                              <h4 className="text-sm font-medium text-blue-900 mb-3 flex items-center">
+                                <Truck className="h-4 w-4 mr-2" />
+                                Order Tracking
+                              </h4>
+                              <OrderProgressBar status={order.status} />
+                            </div>
+                          )}
+
                           {/* Order Summary */}
-                          <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
-                            <h4 className="text-xs sm:text-sm font-medium text-gray-900 mb-1 sm:mb-2 flex items-center">
-                              <Package className="h-3 sm:h-4 w-3 sm:w-4 mr-1 sm:mr-2" />
+                          <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                            <h4 className="text-sm font-medium text-gray-900 mb-3 flex items-center">
+                              <Package className="h-4 w-4 mr-2" />
                               Order Summary
                             </h4>
-                            <div className="space-y-2 sm:space-y-3">
-                              <div className="flex justify-between text-xs sm:text-sm">
-                                <span className="text-gray-500">Items</span>
-                                <span>{itemCount} {itemCount === 1 ? 'item' : 'items'} ({totalItems} units)</span>
+                            <div className="grid grid-cols-2 gap-3 text-sm">
+                              <div>
+                                <p className="text-gray-500">Order ID</p>
+                                <p className="font-medium">{order.id}</p>
                               </div>
-                              <div className="flex justify-between text-xs sm:text-sm">
-                                <span className="text-gray-500">Payment</span>
-                                <div className="flex items-center">
+                              <div>
+                                <p className="text-gray-500">Order Date</p>
+                                <p className="font-medium">
+                                  {order.createdAt.toLocaleDateString('en-US', {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-gray-500">Items</p>
+                                <p className="font-medium">{itemCount} {itemCount === 1 ? 'item' : 'items'} ({totalItems} units)</p>
+                              </div>
+                              <div>
+                                <p className="text-gray-500">Payment</p>
+                                <p className="font-medium capitalize flex items-center">
                                   <CreditCard className="h-3 w-3 mr-1" />
-                                  <span className="capitalize">{order.paymentMethod || 'Unknown'}</span>
-                                </div>
+                                  {order.paymentMethod || 'Unknown'}
+                                </p>
                               </div>
-                              <div className="flex justify-between text-xs sm:text-sm">
-                                <span className="text-gray-500">Total</span>
-                                <span className="font-medium flex items-center">
-                                  <IndianRupee className="h-3 w-3 mr-0.5 sm:mr-1" />
+                              <div>
+                                <p className="text-gray-500">Status</p>
+                                <p className="font-medium">{statusDetails.displayName}</p>
+                              </div>
+                              <div>
+                                <p className="text-gray-500">Total Amount</p>
+                                <p className="font-medium flex items-center">
+                                  <IndianRupee className="h-3 w-3 mr-1" />
                                   {order.total?.toFixed(2) || '0.00'}
-                                </span>
+                                </p>
                               </div>
                             </div>
                           </div>
-
-                          {/* Customer Info (for vendors) */}
-                          {isVendor && order.customerId && (
-                            <div className="bg-gray-50 rounded-lg p-2 sm:p-3">
-                              <h4 className="text-xs sm:text-sm font-medium text-gray-900 mb-1 sm:mb-2 flex items-center">
-                                <User className="h-3 sm:h-4 w-3 sm:w-4 mr-1 sm:mr-2" />
-                                Customer Info
-                              </h4>
-                              <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm">
-                                <div className="flex items-start">
-                                  <MapPin className="h-3 w-3 mt-0.5 mr-1 sm:mr-2 flex-shrink-0" />
-                                  <span className="break-words">{order.shippingAddress || 'No address provided'}</span>
-                                </div>
-                                <div className="flex items-center">
-                                  <Phone className="h-3 w-3 mr-1 sm:mr-2 flex-shrink-0" />
-                                  <span>{order.phoneNumber || 'No phone provided'}</span>
-                                </div>
-                              </div>
-                            </div>
-                          )}
 
                           {/* Order Items */}
                           <div>
-                            <h4 className="text-xs sm:text-sm font-medium text-gray-900 mb-1 sm:mb-2">
-                              Items ({itemCount})
-                            </h4>
-                            <div className="space-y-2 sm:space-y-3">
-                              {Object.entries(order.items || {}).map(([key, item]) => {
-                                const quantity = item.noOfItems || item.quantity || 1;
-                                return (
-                                  <div key={key} className="flex items-start">
-                                    <div className="flex-shrink-0 h-12 sm:h-14 w-12 sm:w-14 rounded-md overflow-hidden border border-gray-200 mr-2 sm:mr-3">
-                                      <img
-                                        src={item.image || 'https://via.placeholder.com/150'}
-                                        alt={item.productName}
-                                        className="h-full w-full object-cover"
-                                      />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">
-                                        {item.productName || 'Unnamed Product'}
-                                      </p>
-                                      <p className="text-xs text-gray-500">
-                                        {item.category || 'General'} • {item.quantity} {item.unit || 'unit'}
-                                      </p>
-                                      {item.variantDetails && (
-                                        <p className="text-xs text-gray-400 truncate">{item.variantDetails}</p>
-                                      )}
-                                    </div>
-                                    <div className="text-right">
-                                      <p className="text-xs sm:text-sm font-medium flex items-center justify-end">
-                                        <IndianRupee className="h-3 w-3 mr-0.5" />
-                                        {(item.price * quantity).toFixed(2)}
-                                      </p>
-                                      <p className="text-xs text-gray-500">Qty: {quantity}</p>
-                                    </div>
+                            <h4 className="text-sm font-medium text-gray-900 mb-3">Ordered Items ({itemCount})</h4>
+                            <div className="space-y-4">
+                              {Object.entries(order.items || {}).map(([key, item]) => (
+                                <div key={key} className="flex items-start p-3 bg-gray-50 rounded-lg border border-gray-100">
+                                  <div className="flex-shrink-0 h-16 w-16 rounded-md overflow-hidden border border-gray-200 mr-3">
+                                    <img
+                                      src={item.image || 'https://via.placeholder.com/150'}
+                                      alt={item.productName}
+                                      className="h-full w-full object-cover"
+                                    />
                                   </div>
-                                );
-                              })}
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-gray-900">
+                                      {item.productName || 'Unnamed Product'}
+                                    </p>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      {item.category || 'General'} • {item.quantity || 1} {item.unit || 'unit'}
+                                    </p>
+                                    {item.variantDetails && (
+                                      <p className="text-xs text-gray-400 mt-1">{item.variantDetails}</p>
+                                    )}
+                                    <p className="text-sm font-medium mt-2 flex items-center">
+                                      <IndianRupee className="h-3 w-3 mr-0.5" />
+                                      {(item.price * (item.quantity || 1)).toFixed(2)}
+                                    </p>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="text-xs text-gray-500">Qty: {item.quantity || 1}</p>
+                                  </div>
+                                </div>
+                              ))}
                             </div>
                           </div>
-
-                          {/* Status Actions (for vendors) */}
-                          {isVendor && (
-                            <div className="pt-1 sm:pt-2">
-                              <h4 className="text-xs sm:text-sm font-medium text-gray-900 mb-1 sm:mb-2">
-                                Update Status
-                              </h4>
-                              <div className="grid grid-cols-3 gap-1 sm:gap-2">
-                                {['processing', 'completed', 'cancelled'].map((status) => {
-                                  const isCurrent = order.status === status;
-                                  return (
-                                    <button
-                                      key={status}
-                                      onClick={() => !isCurrent && updateOrderStatus(order.id, status)}
-                                      disabled={isCurrent}
-                                      className={`py-1 sm:py-2 rounded-md sm:rounded-lg text-xs sm:text-sm font-medium capitalize transition-all ${
-                                        isCurrent
-                                          ? 'bg-gray-200 text-gray-600'
-                                          : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
-                                      }`}
-                                    >
-                                      {status}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
                         </div>
                       </motion.div>
                     )}
@@ -338,11 +369,11 @@ const MartOrdersPage = ({ isVendor = false }) => {
                 </motion.div>
               );
             })}
-          </AnimatePresence>
+          </div>
         )}
       </div>
     </div>
   );
 };
 
-export default MartOrdersPage;
+export default CustomerOrders;

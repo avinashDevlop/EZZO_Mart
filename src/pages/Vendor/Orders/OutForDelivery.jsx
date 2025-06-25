@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Clock,
+  Truck,
   IndianRupee,
   Package,
   User,
@@ -9,40 +9,43 @@ import {
   Phone,
   Calendar,
   Loader2,
-  AlertCircle,
-  Mail,
   Check,
-  X
+  X,
+  Clock,
+  Mail,
+  ClipboardCheck
 } from 'lucide-react';
 import { getDatabase, ref, onValue, update } from 'firebase/database';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const VendorNewOrders = () => {
-  const [newOrders, setNewOrders] = useState([]);
+const VendorOutForDelivery = () => {
+  const [outForDeliveryOrders, setOutForDeliveryOrders] = useState([]);
   const [customerDetails, setCustomerDetails] = useState({});
   const [loading, setLoading] = useState(true);
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [processingOrder, setProcessingOrder] = useState(null);
   const [notification, setNotification] = useState({ show: false, message: '', type: '' });
+  const [showConfirmation, setShowConfirmation] = useState(null);
   const business = localStorage.getItem("vendorBusiness");
 
   useEffect(() => {
     if (!business) return;
 
     const db = getDatabase();
-    const newOrdersRef = ref(db, `Vendors/${business}/Orders/New Orders`);
+    const outForDeliveryRef = ref(db, `Vendors/${business}/Orders/Out for Delivery`);
 
     setLoading(true);
-    const unsubscribe = onValue(newOrdersRef, (snapshot) => {
+    const unsubscribe = onValue(outForDeliveryRef, (snapshot) => {
       const ordersData = snapshot.val();
       if (ordersData) {
         const ordersArray = Object.entries(ordersData).map(([key, value]) => ({
           id: key,
           ...value,
-          createdAt: value.createdAt ? new Date(value.createdAt) : new Date()
-        })).sort((a, b) => b.createdAt - a.createdAt);
+          createdAt: value.createdAt ? new Date(value.createdAt) : new Date(),
+          outForDeliveryAt: value.outForDeliveryAt ? new Date(value.outForDeliveryAt) : new Date()
+        })).sort((a, b) => b.outForDeliveryAt - a.outForDeliveryAt);
         
-        setNewOrders(ordersArray);
+        setOutForDeliveryOrders(ordersArray);
         
         // Fetch customer details for all orders
         ordersArray.forEach(order => {
@@ -58,7 +61,7 @@ const VendorNewOrders = () => {
           }
         });
       } else {
-        setNewOrders([]);
+        setOutForDeliveryOrders([]);
       }
       setLoading(false);
     });
@@ -73,60 +76,62 @@ const VendorNewOrders = () => {
   };
 
   const updateOrderStatus = async (orderId, newStatus) => {
-  if (!business) return;
+    if (!business) return;
 
-  setProcessingOrder(orderId);
-  const db = getDatabase();
-  const order = newOrders.find(o => o.id === orderId);
-  
-  if (!order) {
-    console.error("Order not found");
-    setProcessingOrder(null);
-    return;
-  }
-
-  try {
-    // Create the updated order object with new status
-    const updatedOrder = {
-      ...order,
-      status: newStatus,
-      updatedAt: Date.now()
-    };
-
-    // Create updates object for atomic updates
-    const updates = {};
+    setProcessingOrder(orderId);
+    const db = getDatabase();
+    const order = outForDeliveryOrders.find(o => o.id === orderId);
     
-    // Remove from New Orders
-    updates[`Vendors/${business}/Orders/New Orders/${orderId}`] = null;
-    
-    // Add to the new status category
-    updates[`Vendors/${business}/Orders/${newStatus}/${orderId}`] = updatedOrder;
-    
-    // Update customer's order status if customerId exists
-    if (order.customerId) {
-      updates[`Users/${order.customerId}/Orders/${orderId}/status`] = newStatus;
-      updates[`Users/${order.customerId}/Orders/${orderId}/updatedAt`] = Date.now();
+    if (!order) {
+      console.error("Order not found");
+      setProcessingOrder(null);
+      return;
     }
 
-    // Perform all updates atomically
-    await update(ref(db), updates);
+    try {
+      // Create the updated order object with new status
+      const updatedOrder = {
+        ...order,
+        status: newStatus,
+        updatedAt: Date.now(),
+        ...(newStatus === 'Delivered' && { deliveredAt: Date.now() })
+      };
 
-    // Show success notification
-    showNotification(
-      `Order ${orderId.slice(-6).toUpperCase()} moved to ${newStatus.replace(' Orders', '')}`,
-      'success'
-    );
-    
-    // Close the expanded view if open
-    setExpandedOrder(null);
-    
-  } catch (error) {
-    console.error("Error updating order status: ", error);
-    showNotification('Failed to update order status', 'error');
-  } finally {
-    setProcessingOrder(null);
-  }
-};
+      // Create updates object for atomic updates
+      const updates = {};
+      
+      // Remove from Out for Delivery
+      updates[`Vendors/${business}/Orders/Out for Delivery/${orderId}`] = null;
+      
+      // Add to the new status category
+      updates[`Vendors/${business}/Orders/${newStatus}/${orderId}`] = updatedOrder;
+      
+      // Update customer's order status if customerId exists
+      if (order.customerId) {
+        updates[`Users/${order.customerId}/Orders/${orderId}/status`] = newStatus;
+        updates[`Users/${order.customerId}/Orders/${orderId}/updatedAt`] = Date.now();
+      }
+
+      // Perform all updates atomically
+      await update(ref(db), updates);
+
+      // Show success notification
+      showNotification(
+        `Order ${orderId.slice(-6).toUpperCase()} marked as ${newStatus}`,
+        'success'
+      );
+      
+      // Close the expanded view if open
+      setExpandedOrder(null);
+      setShowConfirmation(null);
+      
+    } catch (error) {
+      console.error("Error updating order status: ", error);
+      showNotification('Failed to update order status', 'error');
+    } finally {
+      setProcessingOrder(null);
+    }
+  };
 
   const getTimeAgo = (date) => {
     const seconds = Math.floor((new Date() - date) / 1000);
@@ -154,7 +159,7 @@ const VendorNewOrders = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
       </div>
     );
   }
@@ -186,20 +191,20 @@ const VendorNewOrders = () => {
 
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-gray-800 flex items-center">
-          <AlertCircle className="h-5 w-5 text-amber-500 mr-2" />
-          New Orders ({newOrders.length})
+          <Truck className="h-5 w-5 text-blue-500 mr-2" />
+          Out for Delivery ({outForDeliveryOrders.length})
         </h2>
       </div>
 
-      {newOrders.length === 0 ? (
+      {outForDeliveryOrders.length === 0 ? (
         <div className="bg-white rounded-lg p-6 text-center">
           <Package className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-          <h3 className="text-gray-500 font-medium">No new orders at the moment</h3>
-          <p className="text-sm text-gray-400 mt-1">New orders will appear here</p>
+          <h3 className="text-gray-500 font-medium">No orders out for delivery</h3>
+          <p className="text-sm text-gray-400 mt-1">Orders marked as out for delivery will appear here</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {newOrders.map((order) => {
+          {outForDeliveryOrders.map((order) => {
             const itemCount = Object.keys(order.items || {}).length;
             const totalItems = Object.values(order.items || {}).reduce((sum, item) => {
               return sum + (item.noOfItems || item.quantity || 1);
@@ -216,19 +221,19 @@ const VendorNewOrders = () => {
               >
                 <div 
                   className={`p-4 flex justify-between items-center cursor-pointer ${
-                    expandedOrder === order.id ? 'bg-amber-50' : ''
+                    expandedOrder === order.id ? 'bg-blue-50' : ''
                   }`}
                   onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
                 >
                   <div className="flex items-center space-x-3">
-                    <div className="h-10 w-10 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center">
-                      <Clock className="h-5 w-5" />
+                    <div className="h-10 w-10 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center">
+                      <Truck className="h-5 w-5" />
                     </div>
                     <div>
                       <h3 className="font-medium text-gray-900">Order #{order.id.slice(-6).toUpperCase()}</h3>
                       <p className="text-xs text-gray-500 flex items-center">
                         <Calendar className="h-3 w-3 mr-1" />
-                        {getTimeAgo(order.createdAt)}
+                        Out for delivery {getTimeAgo(order.outForDeliveryAt)}
                       </p>
                     </div>
                   </div>
@@ -237,8 +242,8 @@ const VendorNewOrders = () => {
                       <IndianRupee className="h-3 w-3 mr-1" />
                       {order.total?.toFixed(2) || '0.00'}
                     </p>
-                    <p className="text-xs text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">
-                      New Order
+                    <p className="text-xs text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">
+                      On the way
                     </p>
                   </div>
                 </div>
@@ -253,6 +258,32 @@ const VendorNewOrders = () => {
                       className="overflow-hidden"
                     >
                       <div className="px-4 pb-4 space-y-4">
+                        {/* Delivery Information */}
+                        <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
+                          <h4 className="text-sm font-medium text-blue-900 mb-2 flex items-center">
+                            <Truck className="h-4 w-4 mr-2" />
+                            Delivery Information
+                          </h4>
+                          <div className="space-y-2 text-sm text-blue-800">
+                            <div className="flex items-center">
+                              <Clock className="h-3 w-3 mr-2 flex-shrink-0" />
+                              <span>Dispatched {getTimeAgo(order.outForDeliveryAt)}</span>
+                            </div>
+                            {order.deliveryPerson && (
+                              <div className="flex items-center">
+                                <User className="h-3 w-3 mr-2 flex-shrink-0" />
+                                <span>Delivery person: {order.deliveryPerson}</span>
+                              </div>
+                            )}
+                            {order.estimatedDelivery && (
+                              <div className="flex items-center">
+                                <Calendar className="h-3 w-3 mr-2 flex-shrink-0" />
+                                <span>Estimated delivery: {order.estimatedDelivery}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
                         {/* Order Summary */}
                         <div className="bg-gray-50 rounded-lg p-3">
                           <h4 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
@@ -348,36 +379,47 @@ const VendorNewOrders = () => {
 
                         {/* Status Actions */}
                         <div className="pt-2">
-                          <h4 className="text-sm font-medium text-gray-900 mb-2">Process Order</h4>
+                          <h4 className="text-sm font-medium text-gray-900 mb-2">Update Order Status</h4>
                           <div className="grid grid-cols-2 gap-2">
-                            <button
-                              onClick={() => updateOrderStatus(order.id, 'Accepted Orders')}
-                              disabled={processingOrder === order.id}
-                              className={`py-2 rounded-lg text-sm font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors flex items-center justify-center ${
-                                processingOrder === order.id ? 'opacity-70' : ''
-                              }`}
-                            >
-                              {processingOrder === order.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                              ) : (
-                                <Check className="h-4 w-4 mr-2" />
-                              )}
-                              Accept Order
-                            </button>
-                            <button
-                              onClick={() => updateOrderStatus(order.id, 'Cancelled Orders')}
-                              disabled={processingOrder === order.id}
-                              className={`py-2 rounded-lg text-sm font-medium bg-red-100 text-red-800 hover:bg-red-200 transition-colors flex items-center justify-center ${
-                                processingOrder === order.id ? 'opacity-70' : ''
-                              }`}
-                            >
-                              {processingOrder === order.id ? (
-                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                              ) : (
-                                <X className="h-4 w-4 mr-2" />
-                              )}
-                              Cancel Order
-                            </button>
+                            {showConfirmation === order.id ? (
+                              <>
+                                <button
+                                  onClick={() => updateOrderStatus(order.id, 'Delivered Orders')}
+                                  disabled={processingOrder === order.id}
+                                  className={`py-2 rounded-lg text-sm font-medium bg-green-600 text-white hover:bg-green-700 transition-colors flex items-center justify-center ${
+                                    processingOrder === order.id ? 'opacity-70' : ''
+                                  }`}
+                                >
+                                  {processingOrder === order.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                  ) : (
+                                    <ClipboardCheck className="h-4 w-4 mr-2" />
+                                  )}
+                                  Confirm Delivery
+                                </button>
+                                <button
+                                  onClick={() => setShowConfirmation(null)}
+                                  disabled={processingOrder === order.id}
+                                  className={`py-2 rounded-lg text-sm font-medium bg-gray-200 text-gray-800 hover:bg-gray-300 transition-colors flex items-center justify-center ${
+                                    processingOrder === order.id ? 'opacity-70' : ''
+                                  }`}
+                                >
+                                  <X className="h-4 w-4 mr-2" />
+                                  Cancel
+                                </button>
+                              </>
+                            ) : (
+                              <button
+                                onClick={() => setShowConfirmation(order.id)}
+                                disabled={processingOrder === order.id}
+                                className={`py-2 rounded-lg text-sm font-medium bg-green-100 text-green-800 hover:bg-green-200 transition-colors flex items-center justify-center col-span-2 ${
+                                  processingOrder === order.id ? 'opacity-70' : ''
+                                }`}
+                              >
+                                <ClipboardCheck className="h-4 w-4 mr-2" />
+                                Mark as Delivered
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -393,4 +435,4 @@ const VendorNewOrders = () => {
   );
 };
 
-export default VendorNewOrders;
+export default VendorOutForDelivery;

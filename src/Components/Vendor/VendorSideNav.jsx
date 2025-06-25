@@ -9,8 +9,6 @@ import {
   BarChart3,
   Eye,
   Plus,
-  FolderOpen,
-  Archive,
   ShoppingBag,
   CheckCircle,
   Truck,

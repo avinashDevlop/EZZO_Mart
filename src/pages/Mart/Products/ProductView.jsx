@@ -151,13 +151,6 @@ const ProductView = () => {
     setQuantity(prev => (prev > 1 ? prev - 1 : 1));
   };
 
-  const handleQuantityChange = (e) => {
-    const value = parseInt(e.target.value);
-    if (!isNaN(value) && value > 0) {
-      setQuantity(value);
-    }
-  };
-
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);

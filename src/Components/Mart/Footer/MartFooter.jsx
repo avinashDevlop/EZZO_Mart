@@ -121,11 +121,11 @@ const Footer = () => {
               <h4 className="text-lg font-semibold mb-4">Categories</h4>
               <ul className="space-y-3">
                 {[
-                  { name: "Power Tools", href: "/categories/power-tools" },
-                  { name: "Hand Tools", href: "/categories/hand-tools" },
-                  { name: "Safety Gear", href: "/categories/safety-gear" },
-                  { name: "Materials", href: "/categories/materials" },
-                  { name: "Equipment", href: "/categories/equipment" },
+                  { name: "Ready-Mix Concrete", href: "/products-categorie/ready-mix-concrete" },
+                  { name: "Hand Tools", href: "/products-categorie/tools" },
+                  { name: "Bricks", href: "/products-categorie/bricks" },
+                  { name: "Steel", href: "/products-categorie/steel" },
+                  { name: "Cement", href: "/products-categorie/cement" },
                 ].map(({ name, href }) => (
                   <li key={name}>
                     <a

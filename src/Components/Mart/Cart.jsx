@@ -9,10 +9,9 @@ import {
   CheckCircle,
   IndianRupee,
   CreditCard,
-  ArrowLeft
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { getDatabase, ref, push, update, get, remove, onValue } from 'firebase/database';
+import { getDatabase, ref, update, get, remove, onValue } from 'firebase/database';
 
 const CartSidebar = ({ isOpen, onClose }) => {
   const [cartItems, setCartItems] = useState([]);
@@ -125,93 +124,142 @@ const CartSidebar = ({ isOpen, onClose }) => {
     }
   };
 
-  const handlePlaceOrder = async () => {
-    if (paymentMethod === 'upi' && !upiId) {
-      alert('Please enter UPI ID');
-      return;
-    }
+ const generateOrderId = () => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < 6; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+};
 
-    setIsProcessing(true);
-    const userId = localStorage.getItem('customerId');
-    if (!userId) {
-      navigate('/login');
-      return;
-    }
+const handlePlaceOrder = async () => {
+  if (paymentMethod === 'upi' && !upiId) {
+    alert('Please enter UPI ID');
+    return;
+  }
 
-    const db = getDatabase();
+  setIsProcessing(true);
+  const userId = localStorage.getItem('customerId');
+  if (!userId) {
+    navigate('/login');
+    return;
+  }
+
+  const db = getDatabase();
+  
+  try {
+    // Generate order ID
+    const orderId = generateOrderId();
     
-    try {
-      // 1. Get cart items
-      const cartRef = ref(db, `Users/${userId}/Cart`);
-      const cartSnapshot = await get(cartRef);
-      const cartItems = cartSnapshot.val();
+    // Get customer data from localStorage
+    const customerData = JSON.parse(localStorage.getItem('customerData') || {});
+    const customerId = localStorage.getItem('customerId');
+    const customerEmail = localStorage.getItem('customerEmail');
+    const customerLocation = JSON.parse(localStorage.getItem('customerLocation') || {});
 
-      if (!cartItems) {
-        throw new Error('Cart is empty');
-      }
+    // 1. Get cart items
+    const cartRef = ref(db, `Users/${userId}/Cart`);
+    const cartSnapshot = await get(cartRef);
+    const cartItems = cartSnapshot.val();
 
-      // Group items by vendor
-      const itemsByVendor = {};
-      Object.values(cartItems).forEach(item => {
-        if (!itemsByVendor[item.vendorId]) {
-          itemsByVendor[item.vendorId] = [];
+    if (!cartItems) {
+      throw new Error('Cart is empty');
+    }
+
+    // Add customer info to each item
+    const itemsWithCustomerInfo = Object.keys(cartItems).reduce((acc, key) => {
+      acc[key] = {
+        ...cartItems[key],
+        customerInfo: {
+          id: customerId,
+          name: customerData.name || 'Unknown',
+          email: customerEmail || 'No email',
+          phone: customerData.phone || 'No phone',
+          location: customerLocation,
+          shippingAddress: customerData.shippingAddress || 'No address provided'
         }
-        itemsByVendor[item.vendorId].push(item);
-      });
+      };
+      return acc;
+    }, {});
 
-      // 2. Create order in user's account
-      const ordersRef = ref(db, `Users/${userId}/Orders`);
-      const newOrderRef = push(ordersRef);
+    // Group items by vendor
+    const itemsByVendor = {};
+    Object.values(itemsWithCustomerInfo).forEach(item => {
+      if (!itemsByVendor[item.vendorId]) {
+        itemsByVendor[item.vendorId] = [];
+      }
+      itemsByVendor[item.vendorId].push(item);
+    });
+
+    // 2. Create order in user's account
+    const ordersRef = ref(db, `Users/${userId}/Orders/${orderId}`);
+    
+    const orderData = {
+      id: orderId, // Add the generated ID to order data
+      items: itemsWithCustomerInfo,
+      paymentMethod,
+      upiId: paymentMethod === 'upi' ? upiId : null,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      total: Object.values(itemsWithCustomerInfo).reduce((sum, item) => {
+        const quantity = item.noOfItems || 1;
+        return sum + (item.price * quantity);
+      }, 0),
+      customerInfo: {
+        id: customerId,
+        name: customerData.name || 'Unknown',
+        email: customerEmail || 'No email',
+        phone: customerData.phone || 'No phone',
+        location: customerLocation,
+        shippingAddress: customerData.shippingAddress || 'No address provided'
+      }
+    };
+
+    await update(ordersRef, orderData);
+
+    // 3. Create orders for each vendor
+    await Promise.all(Object.keys(itemsByVendor).map(async (vendorId) => {
+      const vendorOrderRef = ref(db, `Vendors/${vendorId}/Orders/New Orders/${orderId}`);
       
-      const orderData = {
-        items: cartItems,
+      const vendorOrderData = {
+        id: orderId, // Add the generated ID to vendor order data
+        items: itemsByVendor[vendorId],
+        customerId: userId,
+        orderId: orderId,
         paymentMethod,
-        upiId: paymentMethod === 'upi' ? upiId : null,
         status: 'pending',
         createdAt: new Date().toISOString(),
-        total: Object.values(cartItems).reduce((sum, item) => {
+        total: itemsByVendor[vendorId].reduce((sum, item) => {
           const quantity = item.noOfItems || 1;
           return sum + (item.price * quantity);
-        }, 0)
+        }, 0),
+        customerInfo: {
+          id: customerId,
+          name: customerData.name || 'Unknown',
+          email: customerEmail || 'No email',
+          phone: customerData.phone || 'No phone',
+          location: customerLocation,
+          shippingAddress: customerData.shippingAddress || 'No address provided'
+        }
       };
 
-      await update(newOrderRef, orderData);
-      const orderKey = newOrderRef.key;
+      await update(vendorOrderRef, vendorOrderData);
+    }));
 
-      // 3. Create orders for each vendor
-      await Promise.all(Object.keys(itemsByVendor).map(async (vendorId) => {
-        const vendorOrderRef = ref(db, `Vendors/${vendorId}/Orders/New Orders`);
-        const newVendorOrderRef = push(vendorOrderRef);
-        
-        const vendorOrderData = {
-          items: itemsByVendor[vendorId],
-          customerId: userId,
-          orderId: orderKey,
-          paymentMethod,
-          status: 'pending',
-          createdAt: new Date().toISOString(),
-          total: itemsByVendor[vendorId].reduce((sum, item) => {
-            const quantity = item.noOfItems || 1;
-            return sum + (item.price * quantity);
-          }, 0)
-        };
+    // 4. Clear cart
+    await remove(cartRef);
 
-        await update(newVendorOrderRef, vendorOrderData);
-      }));
-
-      // 4. Clear cart
-      await remove(cartRef);
-
-      // 5. Show success
-      setOrderId(orderKey);
-      setOrderSuccess(true);
-    } catch (error) {
-      console.error("Order failed: ", error);
-      alert('Order failed. Please try again.');
-    } finally {
-      setIsProcessing(false);
-    }
-  };
+    // 5. Show success
+    setOrderId(orderId);
+    setOrderSuccess(true);
+  } catch (error) {
+    console.error("Order failed: ", error);
+    alert('Order failed. Please try again.');
+  } finally {
+    setIsProcessing(false);
+  }
+};
 
   const resetCheckout = () => {
     setShowCheckout(false);

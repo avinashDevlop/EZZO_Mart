@@ -15,7 +15,6 @@ import {
   Wrench,
   HardHat,
 } from "lucide-react";
-import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import CementIcon from "./images/cement.png";
 import BricksIcon from "./images/bricks.png";
@@ -29,14 +28,6 @@ import ReadyMixIcon from "./images/mixTruck.png";
 import PlumbingIcon from "./images/plumbing.png";
 
 const Home = () => {
-
-  const navigate = useNavigate();
-
-  const handleCategoryClick = (categoryValue) => {
-    navigate('/product-category', {
-      state: { category: categoryValue },
-    });
-  };
 
   const banners = [
     {

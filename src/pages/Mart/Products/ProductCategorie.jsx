@@ -70,7 +70,7 @@ const ProductCatalog = () => {
   ];
 
   const [products, setProducts] = useState([]);
-  const [vendors, setVendors] = useState({});
+  // const [vendors, setVendors] = useState({});
   const [currentLocationProducts, setCurrentLocationProducts] = useState([]);
   const [nearbyLocationProducts, setNearbyLocationProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -160,7 +160,7 @@ const ProductCatalog = () => {
       setError(null);
 
       const vendorsData = await fetchVendors();
-      setVendors(vendorsData);
+      // setVendors(vendorsData);
 
       if (Object.keys(vendorsData).length === 0) {
         setProducts([]);
@@ -178,7 +178,7 @@ const ProductCatalog = () => {
         const vendor = vendorsData[vendorId];
         const productsRef = ref(db, `Vendors/${vendorId}/Products`);
 
-        const categoryPath = selectedCategory ? `/${selectedCategory}` : '';
+        // const categoryPath = selectedCategory ? `/${selectedCategory}` : '';
         const productsQuery = selectedCategory 
           ? ref(db, `Vendors/${vendorId}/Products/${selectedCategory}`)
           : productsRef;

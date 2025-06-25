@@ -63,60 +63,53 @@ const VendorAuth = () => {
   const [forgotSuccess, setForgotSuccess] = useState("");
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationError, setLocationError] = useState("");
-  const [location, setLocation] = useState(null);
 
   // Get user's current location
   const getCurrentLocation = () => {
-    setLocationLoading(true);
-    setLocationError("");
-    
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          try {
-            const { latitude, longitude } = position.coords;
-            const response = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
-            );
-            const data = await response.json();
-            
-            if (data.error) {
-              setLocationError("Could not determine address from coordinates");
-            } else {
-              const address = data.address;
-              setLocation({
-                address: data.display_name,
-                city: address.city || address.town || address.village,
-                state: address.state,
-                pincode: address.postcode,
-              });
-              
-              // Auto-fill form with location data
-              setFormData(prev => ({
-                ...prev,
-                street: address.road || "",
-                area: address.suburb || address.neighbourhood || "",
-                city: address.city || address.town || address.village || "",
-                state: address.state || "",
-                pincode: address.postcode || "",
-              }));
-            }
-          } catch (error) {
-            setLocationError("Failed to fetch location details");
-          } finally {
-            setLocationLoading(false);
+  setLocationLoading(true);
+  setLocationError("");
+  
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`
+          );
+          const data = await response.json();
+          
+          if (data.error) {
+            setLocationError("Could not determine address from coordinates");
+          } else {
+            const address = data.address;
+            // Update form data directly without setting location state
+            setFormData(prev => ({
+              ...prev,
+              street: address.road || "",
+              area: address.suburb || address.neighbourhood || "",
+              city: address.city || address.town || address.village || "",
+              state: address.state || "",
+              pincode: address.postcode || "",
+            }));
           }
-        },
-        (error) => {
+        } catch (error) {
+          setLocationError("Failed to fetch location details");
+        } finally {
           setLocationLoading(false);
-          setLocationError("Location access denied. Please enable location services.");
         }
-      );
-    } else {
-      setLocationLoading(false);
-      setLocationError("Geolocation is not supported by your browser");
-    }
-  };
+      },
+      (error) => {
+        setLocationLoading(false);
+        setLocationError("Location access denied. Please enable location services.");
+      }
+    );
+  } else {
+    setLocationLoading(false);
+    setLocationError("Geolocation is not supported by your browser");
+  }
+};
+
 
   useEffect(() => {
     const vendorsRef = ref(db, 'Vendors');

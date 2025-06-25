@@ -23,7 +23,7 @@ const Header = ({ toggleCart }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isHoveringCart, setIsHoveringCart] = useState(false);
   const [showLocationTooltip, setShowLocationTooltip] = useState(false);
-  const [cartItems, setCartItems] = useState([]);
+  // const [cartItems, setCartItems] = useState([]);
 
   const [userLocation, setUserLocation] = useState({
     address: '',
