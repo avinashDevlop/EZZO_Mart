@@ -41,6 +41,32 @@ const MartLogin = ({ onSuccess }) => {
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationError, setLocationError] = useState("");
 
+  // Background state based on form type
+  const [background, setBackground] = useState({
+    from: "from-amber-400",
+    via: "via-orange-500",
+    to: "to-yellow-500"
+  });
+
+  // Update background when form changes
+  useEffect(() => {
+    if (isLogin) {
+      // Sign in background - warmer tones
+      setBackground({
+        from: "from-amber-400",
+        via: "via-orange-500",
+        to: "to-yellow-500"
+      });
+    } else {
+      // Register background - slightly cooler but still warm
+      setBackground({
+        from: "from-amber-300",
+        via: "via-orange-400",
+        to: "to-yellow-400"
+      });
+    }
+  }, [isLogin]);
+
   // Check for saved user data on component mount
   useEffect(() => {
     const savedUser = localStorage.getItem('customerData');
@@ -146,122 +172,110 @@ const MartLogin = ({ onSuccess }) => {
   };
 
   const handleRegistration = async (e) => {
-  e.preventDefault();
-  
-  if (validateForm()) {
-    setIsSubmitting(true);
-    try {
-      // Check if email exists
-      const emailRef = ref(db, `CustomerEmails/${formData.email.replace(/\./g, ',')}`);
-      const emailSnapshot = await get(emailRef);
+    e.preventDefault();
+    
+    if (validateForm()) {
+      setIsSubmitting(true);
+      try {
+        // Check if email exists
+        const emailRef = ref(db, `CustomerEmails/${formData.email.replace(/\./g, ',')}`);
+        const emailSnapshot = await get(emailRef);
 
-      if (emailSnapshot.exists()) {
-        setFormErrors({ email: "Email already registered. Please login." });
-        console.warn('Registration attempt with existing email:', formData.email);
-        return;
-      }
+        if (emailSnapshot.exists()) {
+          setFormErrors({ email: "Email already registered. Please login." });
+          console.warn('Registration attempt with existing email:', formData.email);
+          return;
+        }
 
-      // Check if phone exists in the same state/city
-      const phoneRef = ref(db, `Users/${formData.state}/${formData.city}/${formData.phone}`);
-      const phoneSnapshot = await get(phoneRef);
+        // Check if phone exists in the same state/city
+        const phoneRef = ref(db, `Users/${formData.state}/${formData.city}/${formData.phone}`);
+        const phoneSnapshot = await get(phoneRef);
 
-      if (phoneSnapshot.exists()) {
-        setFormErrors({ phone: "Phone number already registered in this location." });
-        console.warn('Registration attempt with existing phone:', {
+        if (phoneSnapshot.exists()) {
+          setFormErrors({ phone: "Phone number already registered in this location." });
+          console.warn('Registration attempt with existing phone:', {
+            phone: formData.phone,
+            state: formData.state,
+            city: formData.city
+          });
+          return;
+        }
+
+        // Hash password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(formData.password, salt);
+        console.log('Password hashed successfully');
+
+        // Create customer data
+        const customerData = {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
           phone: formData.phone,
+          password: hashedPassword,
+          address: formData.address,
+          city: formData.city,
           state: formData.state,
-          city: formData.city
+          pincode: formData.pincode,
+          createdAt: Date.now(),
+          lastLogin: Date.now(),
+          coordinates: location?.coordinates || null
+        };
+
+        // Save to database in structured path
+        await set(phoneRef, customerData);
+        console.log('User data saved to Firebase:', {
+          path: `Users/${formData.state}/${formData.city}/${formData.phone}`,
+          data: customerData
         });
-        return;
+
+        // Also save reference by email
+        await set(emailRef, {
+          state: formData.state,
+          city: formData.city,
+          phone: formData.phone
+        });
+        console.log('Email reference saved to Firebase');
+
+        // Prepare data for localStorage
+        const userDataToStore = {
+          ...customerData,
+          fullName: `${formData.firstName} ${formData.lastName}`,
+          fullAddress: `${formData.address}, ${formData.city}, ${formData.state} - ${formData.pincode}`,
+          // Remove sensitive data
+          password: undefined
+        };
+
+        // Save to localStorage
+        localStorage.setItem('customerData', JSON.stringify(userDataToStore));
+        localStorage.setItem('customerId', `${formData.state}/${formData.city}/${formData.phone}`);
+        localStorage.setItem('customerEmail', formData.email);
+        localStorage.setItem('customerLocation', JSON.stringify({
+          address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          pincode: formData.pincode,
+          coordinates: location?.coordinates || null
+        }));
+
+        handleLoginSuccess();
+        navigate('/');
+      } catch (error) {
+        console.error("Registration failed:", {
+          error: error.message,
+          stack: error.stack,
+          formData: {
+            ...formData,
+            password: '**REDACTED**' // Never log actual passwords
+          },
+          timestamp: new Date().toISOString()
+        });
+        setFormErrors({ general: "Registration failed. Please try again." });
+      } finally {
+        setIsSubmitting(false);
       }
-
-      // Hash password
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(formData.password, salt);
-      console.log('Password hashed successfully');
-
-      // Create customer data
-      const customerData = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        phone: formData.phone,
-        password: hashedPassword,
-        address: formData.address,
-        city: formData.city,
-        state: formData.state,
-        pincode: formData.pincode,
-        createdAt: Date.now(),
-        lastLogin: Date.now(),
-        coordinates: location?.coordinates || null
-      };
-
-      // Save to database in structured path
-      await set(phoneRef, customerData);
-      console.log('User data saved to Firebase:', {
-        path: `Users/${formData.state}/${formData.city}/${formData.phone}`,
-        data: customerData
-      });
-
-      // Also save reference by email
-      await set(emailRef, {
-        state: formData.state,
-        city: formData.city,
-        phone: formData.phone
-      });
-      console.log('Email reference saved to Firebase');
-
-      // Prepare data for localStorage
-      const userDataToStore = {
-        ...customerData,
-        fullName: `${formData.firstName} ${formData.lastName}`,
-        fullAddress: `${formData.address}, ${formData.city}, ${formData.state} - ${formData.pincode}`,
-        // Remove sensitive data
-        password: undefined
-      };
-
-      // Save to localStorage
-      localStorage.setItem('customerData', JSON.stringify(userDataToStore));
-      localStorage.setItem('customerId', `${formData.state}/${formData.city}/${formData.phone}`);
-      localStorage.setItem('customerEmail', formData.email);
-      localStorage.setItem('customerLocation', JSON.stringify({
-        address: formData.address,
-        city: formData.city,
-        state: formData.state,
-        pincode: formData.pincode,
-        coordinates: location?.coordinates || null
-      }));
-
-    //   console.log('User data stored in localStorage:', {
-    //     customerData: userDataToStore,
-    //     customerId: `${formData.state}/${formData.city}/${formData.phone}`,
-    //     customerLocation: {
-    //       address: formData.address,
-    //       city: formData.city,
-    //       state: formData.state,
-    //       pincode: formData.pincode,
-    //       coordinates: location?.coordinates || null
-    //     }
-    //   });
-
-      handleLoginSuccess();
-      navigate('/');
-    } catch (error) {
-      console.error("Registration failed:", {
-        error: error.message,
-        stack: error.stack,
-        formData: {
-          ...formData,
-          password: '**REDACTED**' // Never log actual passwords
-        },
-        timestamp: new Date().toISOString()
-      });
-      setFormErrors({ general: "Registration failed. Please try again." });
-    } finally {
-      setIsSubmitting(false);
     }
-  }
-};
+  };
 
   // When login is successful
   const handleLoginSuccess = () => {
@@ -272,98 +286,98 @@ const MartLogin = ({ onSuccess }) => {
   };
 
   const handleLogin = async (e) => {
-  e.preventDefault();
-  setLoginError("");
-  console.log('Login attempt initiated');
+    e.preventDefault();
+    setLoginError("");
+    console.log('Login attempt initiated');
 
-  if (!loginEmail || !loginPassword) {
-    setLoginError("Please enter both email and password");
-    console.warn('Login validation failed - missing fields');
-    return;
-  }
-
-  setIsSubmitting(true);
-
-  try {
-    // Check if email exists
-    const emailRef = ref(db, `CustomerEmails/${loginEmail.replace(/\./g, ',')}`);
-    const emailSnapshot = await get(emailRef);
-
-    if (!emailSnapshot.exists()) {
-      setLoginError("Account not found. Please register first.");
-      console.warn('Login attempt with unregistered email:', loginEmail);
+    if (!loginEmail || !loginPassword) {
+      setLoginError("Please enter both email and password");
+      console.warn('Login validation failed - missing fields');
       return;
     }
 
-    // Get user location from email reference
-    const { state, city, phone } = emailSnapshot.val();
-    const userRef = ref(db, `Users/${state}/${city}/${phone}`);
-    const userSnapshot = await get(userRef);
+    setIsSubmitting(true);
 
-    if (userSnapshot.exists()) {
-      const userData = userSnapshot.val();
-      console.log('Retrieved user data from Firebase:', {
-        path: `Users/${state}/${city}/${phone}`,
-        userData: {
-          ...userData,
-          password: '**REDACTED**'
-        }
-      });
+    try {
+      // Check if email exists
+      const emailRef = ref(db, `CustomerEmails/${loginEmail.replace(/\./g, ',')}`);
+      const emailSnapshot = await get(emailRef);
 
-      const isMatch = await bcrypt.compare(loginPassword, userData.password);
-      console.log('Password comparison result:', isMatch);
-
-      if (isMatch) {
-        // Update last login
-        await update(userRef, { lastLogin: Date.now() });
-        console.log('Last login timestamp updated');
-
-        // Prepare data for localStorage
-        const userDataToStore = {
-          ...userData,
-          fullName: `${userData.firstName} ${userData.lastName}`,
-          fullAddress: `${userData.address}, ${userData.city}, ${userData.state} - ${userData.pincode}`,
-          // Remove sensitive data
-          password: undefined
-        };
-
-        // Save auth state
-        localStorage.setItem('customerData', JSON.stringify(userDataToStore));
-        localStorage.setItem('customerId', `${state}/${city}/${phone}`);
-        localStorage.setItem('customerEmail', loginEmail);
-        localStorage.setItem('customerLocation', JSON.stringify({
-          address: userData.address,
-          city: userData.city,
-          state: userData.state,
-          pincode: userData.pincode,
-          coordinates: userData.coordinates || null
-        }));
-
-        handleLoginSuccess();
-        navigate('/');
-      } else {
-        setLoginError("Invalid password. Please try again.");
-        console.warn('Login failed - password mismatch for email:', loginEmail);
+      if (!emailSnapshot.exists()) {
+        setLoginError("Account not found. Please register first.");
+        console.warn('Login attempt with unregistered email:', loginEmail);
+        return;
       }
-    } else {
-      setLoginError("Account not found. Please register first.");
-      console.warn('User data not found in Firebase despite email reference');
+
+      // Get user location from email reference
+      const { state, city, phone } = emailSnapshot.val();
+      const userRef = ref(db, `Users/${state}/${city}/${phone}`);
+      const userSnapshot = await get(userRef);
+
+      if (userSnapshot.exists()) {
+        const userData = userSnapshot.val();
+        console.log('Retrieved user data from Firebase:', {
+          path: `Users/${state}/${city}/${phone}`,
+          userData: {
+            ...userData,
+            password: '**REDACTED**'
+          }
+        });
+
+        const isMatch = await bcrypt.compare(loginPassword, userData.password);
+        console.log('Password comparison result:', isMatch);
+
+        if (isMatch) {
+          // Update last login
+          await update(userRef, { lastLogin: Date.now() });
+          console.log('Last login timestamp updated');
+
+          // Prepare data for localStorage
+          const userDataToStore = {
+            ...userData,
+            fullName: `${userData.firstName} ${userData.lastName}`,
+            fullAddress: `${userData.address}, ${userData.city}, ${userData.state} - ${userData.pincode}`,
+            // Remove sensitive data
+            password: undefined
+          };
+
+          // Save auth state
+          localStorage.setItem('customerData', JSON.stringify(userDataToStore));
+          localStorage.setItem('customerId', `${state}/${city}/${phone}`);
+          localStorage.setItem('customerEmail', loginEmail);
+          localStorage.setItem('customerLocation', JSON.stringify({
+            address: userData.address,
+            city: userData.city,
+            state: userData.state,
+            pincode: userData.pincode,
+            coordinates: userData.coordinates || null
+          }));
+
+          handleLoginSuccess();
+          navigate('/');
+        } else {
+          setLoginError("Invalid password. Please try again.");
+          console.warn('Login failed - password mismatch for email:', loginEmail);
+        }
+      } else {
+        setLoginError("Account not found. Please register first.");
+        console.warn('User data not found in Firebase despite email reference');
+      }
+    } catch (error) {
+      console.error("Login error:", {
+        error: error.message,
+        stack: error.stack,
+        loginEmail,
+        timestamp: new Date().toISOString()
+      });
+      setLoginError("Login failed. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
-  } catch (error) {
-    console.error("Login error:", {
-      error: error.message,
-      stack: error.stack,
-      loginEmail,
-      timestamp: new Date().toISOString()
-    });
-    setLoginError("Login failed. Please try again.");
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+  };  
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-400 via-orange-500 to-yellow-500 flex items-center justify-center p-4">
+    <div className={`bg-gradient-to-br ${background.from} ${background.via} ${background.to} flex items-center justify-center p-4 transition-colors duration-500`}>
       <motion.div
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
