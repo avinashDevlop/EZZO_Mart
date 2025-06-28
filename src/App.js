@@ -12,6 +12,7 @@ import MartLogin from "./pages/Mart/MartLogin";
 import ProductCategorie from "./pages/Mart/Products/ProductCategorie";
 import ProductView from "./pages/Mart/Products/ProductView";
 import MartOrders from "./pages/Mart/Orders/MartOrders";
+import Profile from "./Components/Mart/Profile";  
 
 // Vendor pages
 import VendorDashboard from "./pages/Vendor/VendorDashboard";
@@ -48,6 +49,7 @@ function App() {
           <Route path="/products-categorie/:category" element={<ProductCategorie />} />
           <Route path="/vendor/:vendorId/products/:category/:productId" element={<ProductView />} />
           <Route path="/mart-orders" element={<MartOrders />} />
+          <Route path="/profile" element={<Profile />} />
         </Route>
 
         {/* Vendor protected routes */}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
 import { getDatabase, ref, onValue, off } from "firebase/database";
-import { Search, ShoppingCart, Menu, X, MapPin } from "lucide-react";
+import { Search, ShoppingCart, Menu, X, MapPin, User, LogOut, LogIn,ChevronDown } from "lucide-react";
 
 import CementIcon from "../../../pages/Mart/images/cement.png";
 import BricksIcon from "../../../pages/Mart/images/bricks.png";
@@ -17,13 +17,16 @@ import PlumbingIcon from "../../../pages/Mart/images/plumbing.png";
 const Header = ({ toggleCart }) => {
   const navigate = useNavigate();
 
+  // State variables
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isScrolled, setIsScrolled] = useState(false);
   const [isHoveringCart, setIsHoveringCart] = useState(false);
   const [showLocationTooltip, setShowLocationTooltip] = useState(false);
-  // const [cartItems, setCartItems] = useState([]);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userName, setUserName] = useState('');
 
   const [userLocation, setUserLocation] = useState({
     address: '',
@@ -61,31 +64,41 @@ const Header = ({ toggleCart }) => {
     };
 
     const loadCartItems = () => {
-  const userId = localStorage.getItem('customerId');
-  if (userId) {
-    const db = getDatabase();
-    const cartRef = ref(db, `Users/${userId}/Cart`);
-    
-    onValue(cartRef, (snapshot) => {
-      const cartData = snapshot.val();
-      if (cartData) {
-        // Count the number of items in the cart
-        const count = Object.keys(cartData).length;
-        setCartItemCount(count);
-      } else {
-        setCartItemCount(0);
+      const userId = localStorage.getItem('customerId');
+      if (userId) {
+        const db = getDatabase();
+        const cartRef = ref(db, `Users/${userId}/Cart`);
+
+        onValue(cartRef, (snapshot) => {
+          const cartData = snapshot.val();
+          setCartItemCount(cartData ? Object.keys(cartData).length : 0);
+        });
+
+        return () => off(cartRef);
       }
-    });
-    
-    // Return the unsubscribe function to clean up later
-    return () => off(cartRef);
-  }
-};
+    };
+
+    const checkAuthStatus = () => {
+      const custData = localStorage.getItem('customerData');
+      if (custData) {
+        try {
+          const parsedData = JSON.parse(custData);
+          setIsLoggedIn(true);
+          setUserName(parsedData.fullName || 'User');
+        } catch (err) {
+          console.error('Error parsing customer data:', err);
+          setIsLoggedIn(false);
+        }
+      } else {
+        setIsLoggedIn(false);
+      }
+    };
+
 
     loadLocation();
     loadCartItems();
+    checkAuthStatus();
 
-    // Listen for cart updates from other components
     const handleCartUpdate = () => loadCartItems();
     window.addEventListener('cartUpdated', handleCartUpdate);
 
@@ -97,12 +110,32 @@ const Header = ({ toggleCart }) => {
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
-    if (isSearchOpen) setIsSearchOpen(false);
+    setIsSearchOpen(false);
+    setIsProfileOpen(false);
   };
 
   const toggleSearch = () => {
     setIsSearchOpen(!isSearchOpen);
-    if (isMenuOpen) setIsMenuOpen(false);
+    setIsMenuOpen(false);
+    setIsProfileOpen(false);
+  };
+
+  const toggleProfile = () => {
+    setIsProfileOpen(!isProfileOpen);
+    setIsMenuOpen(false);
+    setIsSearchOpen(false);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('customerId');
+    localStorage.removeItem('customerName');
+    localStorage.removeItem('customerToken');
+    localStorage.removeItem('customerLocation');
+    localStorage.removeItem('customerData');
+    localStorage.removeItem('customerEmail');
+    setIsLoggedIn(false);
+    setIsProfileOpen(false);
+    navigate('/mart-login');
   };
 
   const handleSearch = (e) => {
@@ -117,19 +150,17 @@ const Header = ({ toggleCart }) => {
   const handleCategoryClick = (categoryValue) => {
     navigate(`/products-categorie/${categoryValue}`);
     setTimeout(() => {
-      window.location.reload(); // Forces refresh after navigating
-    }, 100); // Small delay ensures routing happens first
+      window.location.reload();
+    }, 100);
     setIsMenuOpen(false);
   };
 
   return (
     <>
-      <header
-        className={`fixed top-0 w-full z-50 transition-all duration-500 ease-out ${isScrolled
+      <header className={`fixed top-0 w-full z-50 transition-all duration-500 ease-out ${isScrolled
           ? "bg-gradient-to-r from-amber-600 via-amber-500 to-yellow-400 shadow-lg"
           : "bg-gradient-to-r from-amber-700 via-amber-600 to-yellow-500 shadow-md"
-          }`}
-      >
+        }`}>
         <div className="relative px-5">
           <div className="flex items-center justify-between h-[68px]">
             <div
@@ -256,20 +287,83 @@ const Header = ({ toggleCart }) => {
                 VENDORS
                 <span className="absolute -bottom-0.5 left-0 w-0 h-[1.5px] bg-gradient-to-r from-amber-200 to-amber-400 transition-all duration-500 group-hover:w-full"></span>
               </button>
-              <button
-                onClick={() => navigate('/mart-orders')}
-                className="text-white hover:text-amber-100 transition-all duration-300 text-[15px] relative group"
-              >
-                ORDERS
-                <span className="absolute -bottom-0.5 left-0 w-0 h-[1.5px] bg-gradient-to-r from-amber-200 to-amber-400 transition-all duration-500 group-hover:w-full"></span>
-              </button>
-              <button
-                onClick={() => navigate('/mart-login')}
-                className="text-white hover:text-amber-100 transition-all duration-300 text-[15px] relative group"
-              >
-                LOGIN
-                <span className="absolute -bottom-0.5 left-0 w-0 h-[1.5px] bg-gradient-to-r from-amber-200 to-amber-400 transition-all duration-500 group-hover:w-full"></span>
-              </button>
+
+              <div className="relative">
+                <button
+                  onClick={toggleProfile}
+                  className="flex items-center text-white hover:text-amber-100 transition-colors duration-300"
+                >
+                  <User className="h-6 w-6" />
+                  {isLoggedIn && (
+                    <span className="ml-2 flex items-center space-x-1">
+                      <span>{userName}</span>
+                      <ChevronDown className="h-4 w-4 text-white" />
+                    </span>
+                  )}
+                </button>
+
+                {isProfileOpen && (
+                  <div
+                    className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-amber-100"
+                    onMouseLeave={() => setIsProfileOpen(false)}
+                  >
+                    {isLoggedIn ? (
+                      <>
+                        <div className="px-4 py-2 text-sm text-gray-700 border-b border-gray-100">
+                          <div className="font-medium">Hello, {userName}</div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            navigate('/mart-login');
+                          }} 
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-amber-50"
+                        >
+                          Login
+                        </button>
+                        <button
+                          onClick={() => {
+                            navigate('/mart-orders');
+                            setIsProfileOpen(false);
+                          }}
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-amber-50"
+                        >
+                          My Orders
+                        </button>
+                        <button
+                          onClick={handleLogout}
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 flex items-center"
+                        >
+                          <LogOut className="h-4 w-4 mr-2" />
+                          Logout
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => {
+                            navigate('/mart-login');
+                            setIsProfileOpen(false);
+                          }}
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 flex items-center"
+                        >
+                          <LogIn className="h-4 w-4 mr-2" />
+                          Login
+                        </button>
+                        <button
+                          onClick={() => {
+                            navigate('/mart-signup');
+                            setIsProfileOpen(false);
+                          }}
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-amber-50"
+                        >
+                          Create Account
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+
               <button
                 className="text-white hover:text-amber-100 relative group"
                 onClick={toggleCart}
@@ -317,6 +411,74 @@ const Header = ({ toggleCart }) => {
                   </span>
                 )}
               </button>
+
+              <div className="relative">
+                <button
+                  onClick={toggleProfile}
+                  className="text-white hover:text-amber-100 transition-all duration-300"
+                >
+                  <User className="h-6 w-6" />
+                </button>
+
+                {isProfileOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-amber-100">
+                    {isLoggedIn ? (
+                      <>
+                        <div className="px-4 py-2 text-sm text-gray-700 border-b border-gray-100">
+                          <div className="font-medium">Hello, {userName}</div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            navigate('/mart-login');
+                          }} 
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-amber-50"
+                        >
+                          Login
+                        </button>
+                        <button
+                          onClick={() => {
+                            navigate('/mart-orders');
+                            setIsProfileOpen(false);
+                          }}
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-amber-50"
+                        >
+                          Your Orders
+                        </button>
+                        <button
+                          onClick={handleLogout}
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 flex items-center"
+                        >
+                          <LogOut className="h-4 w-4 mr-2" />
+                          Logout
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => {
+                            navigate('/mart-login');
+                            setIsProfileOpen(false);
+                          }}
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-amber-50 flex items-center"
+                        >
+                          <LogIn className="h-4 w-4 mr-2" />
+                          Login
+                        </button>
+                        <button
+                          onClick={() => {
+                            navigate('/mart-signup');
+                            setIsProfileOpen(false);
+                          }}
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-amber-50"
+                        >
+                          Create Account
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+
               <button
                 onClick={toggleMenu}
                 className="text-white hover:text-amber-100 transition-all duration-300 transform hover:scale-110 active:scale-95"
@@ -422,7 +584,7 @@ const Header = ({ toggleCart }) => {
               </span>
             </button>
             <button
-              onClick={() => navigate('/orders')}
+              onClick={() => navigate('/mart-orders')}
               className="block w-full text-left text-white hover:bg-amber-600/40 px-4 py-3 rounded-md text-[16px] transition-all duration-300 flex items-center space-x-3.5 hover:pl-6 transform hover:scale-[1.02] active:scale-[0.98]"
             >
               <span className="text-[20px]">📦</span>
@@ -435,8 +597,8 @@ const Header = ({ toggleCart }) => {
               onClick={() => navigate('/mart-login')}
               className="block w-full text-left text-white hover:bg-amber-600/40 px-4 py-3 rounded-md text-[16px] transition-all duration-300 flex items-center space-x-3.5 hover:pl-6 transform hover:scale-[1.02] active:scale-[0.98]"
             >
-              <span className="text-[20px]">🔑</span>
-              <span>LOGIN</span>
+              <User className="h-6 w-6" />
+              <span>PROFILE</span>
               <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 →
               </span>
