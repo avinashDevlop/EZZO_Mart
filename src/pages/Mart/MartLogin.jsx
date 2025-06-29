@@ -21,6 +21,7 @@ const MartLogin = ({ onSuccess }) => {
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
@@ -28,6 +29,7 @@ const MartLogin = ({ onSuccess }) => {
     email: "",
     phone: "",
     password: "",
+    confirmPassword: "",
     address: "",
     city: "",
     state: "",
@@ -40,6 +42,9 @@ const MartLogin = ({ onSuccess }) => {
   const [location, setLocation] = useState(null);
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationError, setLocationError] = useState("");
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
+  const [forgotPasswordStatus, setForgotPasswordStatus] = useState(null);
 
   // Background state based on form type
   const [background, setBackground] = useState({
@@ -159,6 +164,10 @@ const MartLogin = ({ onSuccess }) => {
       errors.password = "Password is required";
     } else if (!passwordRegex.test(formData.password)) {
       errors.password = "Password must be at least 8 characters with letters and numbers";
+    }
+
+    if (!isLogin && formData.password !== formData.confirmPassword) {
+      errors.confirmPassword = "Passwords do not match";
     }
 
     if (!isLogin) {
@@ -374,7 +383,48 @@ const MartLogin = ({ onSuccess }) => {
     } finally {
       setIsSubmitting(false);
     }
-  };  
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setForgotPasswordStatus(null);
+    
+    if (!forgotPasswordEmail) {
+      setForgotPasswordStatus({ type: 'error', message: 'Please enter your email address' });
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    try {
+      // Check if email exists
+      const emailRef = ref(db, `CustomerEmails/${forgotPasswordEmail.replace(/\./g, ',')}`);
+      const emailSnapshot = await get(emailRef);
+
+      if (!emailSnapshot.exists()) {
+        setForgotPasswordStatus({ type: 'error', message: 'Email not found. Please check your email or register.' });
+        return;
+      }
+
+      // In a real app, you would send a password reset email here
+      // For this example, we'll just simulate it
+      setForgotPasswordStatus({ 
+        type: 'success', 
+        message: 'Password reset instructions have been sent to your email (simulated for demo)'
+      });
+      
+      // Reset the form
+      setForgotPasswordEmail('');
+      setTimeout(() => {
+        setShowForgotPassword(false);
+      }, 3000);
+    } catch (error) {
+      console.error("Forgot password error:", error);
+      setForgotPasswordStatus({ type: 'error', message: 'Failed to process your request. Please try again.' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className={`bg-gradient-to-br ${background.from} ${background.via} ${background.to} flex items-center justify-center p-4 transition-colors duration-500`}>
@@ -429,13 +479,19 @@ const MartLogin = ({ onSuccess }) => {
         <div className="p-6 md:p-8">
           <div className="flex border-b border-gray-200 mb-6">
             <button
-              onClick={() => setIsLogin(true)}
-              className={`flex-1 py-2 font-medium text-sm ${isLogin ? 'text-orange-600 border-b-2 border-orange-600' : 'text-gray-500 hover:text-gray-700'}`}
+              onClick={() => {
+                setIsLogin(true);
+                setShowForgotPassword(false);
+              }}
+              className={`flex-1 py-2 font-medium text-sm ${isLogin && !showForgotPassword ? 'text-orange-600 border-b-2 border-orange-600' : 'text-gray-500 hover:text-gray-700'}`}
             >
               Sign In
             </button>
             <button
-              onClick={() => setIsLogin(false)}
+              onClick={() => {
+                setIsLogin(false);
+                setShowForgotPassword(false);
+              }}
               className={`flex-1 py-2 font-medium text-sm ${!isLogin ? 'text-orange-600 border-b-2 border-orange-600' : 'text-gray-500 hover:text-gray-700'}`}
             >
               Register
@@ -443,7 +499,72 @@ const MartLogin = ({ onSuccess }) => {
           </div>
 
           <AnimatePresence mode="wait">
-            {isLogin ? (
+            {showForgotPassword ? (
+              <motion.div
+                key="forgot-password"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 10 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-4"
+              >
+                <h3 className="text-lg font-medium text-gray-900">Reset Password</h3>
+                <p className="text-sm text-gray-600">
+                  Enter your email address and we'll send you instructions to reset your password.
+                </p>
+                
+                <form onSubmit={handleForgotPassword}>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="email"
+                        value={forgotPasswordEmail}
+                        onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                        className="w-full pl-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                        placeholder="your@email.com"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {forgotPasswordStatus && (
+                    <div className={`mb-4 p-3 rounded-lg text-sm ${
+                      forgotPasswordStatus.type === 'error' 
+                        ? 'bg-red-50 text-red-600' 
+                        : 'bg-green-50 text-green-600'
+                    }`}>
+                      {forgotPasswordStatus.message}
+                    </div>
+                  )}
+
+                  <div className="flex space-x-3">
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="flex-1 bg-gradient-to-r from-orange-500 to-amber-500 text-white py-3 rounded-lg font-medium hover:from-orange-600 hover:to-amber-600 transition-all duration-300 shadow-md hover:shadow-lg flex items-center justify-center"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        "Send Reset Link"
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowForgotPassword(false)}
+                      className="flex-1 bg-gray-100 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-200 transition-all duration-300"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </motion.div>
+            ) : isLogin ? (
               <motion.div
                 key="login"
                 initial={{ opacity: 0, x: -10 }}
@@ -487,6 +608,16 @@ const MartLogin = ({ onSuccess }) => {
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => setShowForgotPassword(true)}
+                      className="text-sm text-orange-600 hover:text-orange-700 font-medium"
+                    >
+                      Forgot password?
+                    </button>
                   </div>
 
                   {loginError && (
@@ -627,6 +758,32 @@ const MartLogin = ({ onSuccess }) => {
                     </div>
                     {formErrors.password && (
                       <p className="text-xs text-red-500 mt-1">{formErrors.password}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type={showConfirmPassword ? "text" : "password"}
+                        name="confirmPassword"
+                        value={formData.confirmPassword}
+                        onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
+                        className="w-full pl-10 pr-10 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                        placeholder="••••••••"
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    {formErrors.confirmPassword && (
+                      <p className="text-xs text-red-500 mt-1">{formErrors.confirmPassword}</p>
                     )}
                   </div>
 
