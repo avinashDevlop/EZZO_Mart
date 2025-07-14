@@ -1,43 +1,248 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
-    <meta
-      name="description"
-      content="EZZO Mart is an e-commerce platform that specializes in selling construction tools and equipment. It also includes a vendor management system, allowing multiple vendors to register, manage their inventory, and fulfill customer orders."
-    />
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
-    <!--
-      manifest.json provides metadata used when your web app is installed on a
-      user's mobile device or desktop. See https://developers.google.com/web/fundamentals/web-app-manifest/
-    -->
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-    <!--
-      Notice the use of %PUBLIC_URL% in the tags above.
-      It will be replaced with the URL of the `public` folder during the build.
-      Only files inside the `public` folder can be referenced from the HTML.
+<head>
+    <!-- Basic Meta Tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="theme-color" content="#FF6B00">
+    
+    <!-- Primary Meta Tags -->
+    <title>EZZO Mart - Buy Construction Materials Online | Cement, Bricks, Tiles, Steel, Tools</title>
+    <meta name="title" content="EZZO Mart - Buy Construction Materials Online | Cement, Bricks, Tiles, Steel, Tools">
+    <meta name="description" content="India's #1 Online Construction Marketplace. Buy cement, bricks, tiles, steel, paint, plumbing, electrical, tools & furniture in small/bulk quantities. Best prices with free delivery on ₹5000+ orders.">
+    <meta name="keywords" content="
+    /* BRAND & GENERAL */
+    ezzo mart, ezzomart.in, construction mart, buildmart india, construction ecommerce,
+    online hardware store, building materials online, construction supplies india,
+    contractor materials online, diy construction shopping, home renovation supplies,
 
-      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
-      work correctly both with client-side routing and a non-root public URL.
-      Learn how to configure a non-root public URL by running `npm run build`.
-    -->
-    <title>EZZO Mart</title>
-  </head>
-  <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
+    /* CEMENT & CONCRETE */
+    buy cement online, opc 53 grade cement, ppc cement price, best cement for house,
+    ultratech cement online, ambuja cement price, acc cement dealers, shree cement bags,
+    ready mix concrete, rmc price per cubic meter, concrete mixture ratio, m20 grade concrete,
+    mini cement bags, 5kg cement pack, small cement quantity, cement delivery today,
+    waterproof cement, white cement price, cement additives, concrete curing compound,
+
+    /* BRICKS & BLOCKS */
+    bricks online purchase, clay bricks price, fly ash bricks advantages, red bricks delivery,
+    aac blocks vs bricks, clc blocks price, concrete hollow blocks, paver blocks design,
+    interlocking bricks, brick wall construction, brick calculator online, brick laying tools,
+    refractory bricks, brick jhama price, brick bond patterns, brick cutting machine,
+
+    /* TILES & STONES */
+    tiles online shopping, vitrified tiles price, ceramic tiles for floor, bathroom tiles design,
+    wall tiles catalogue, marble flooring cost, granite stone price, kota stone flooring,
+    mosaic tiles designs, skirting tiles online, tile adhesive price, tile grout colors,
+    non slip tiles, polished tiles vs matte, tile cutting service, tile laying tools,
+
+    /* STEEL & METAL */
+    tmt steel bars, fe 500d steel price, steel rod sizes, ms angle weight chart,
+    gi sheets for roofing, steel channel price, mild steel plates, stainless steel pipes,
+    iron nails price, welding rods online, steel fabrication materials, metal roofing sheets,
+    steel wire mesh, reinforcement steel, structural steel sections, metal binding wire,
+
+    /* PAINT & COATINGS */
+    asian paints catalogue, dulux weatherproof paint, berger paint price list,
+    texture paint designs, wall putty price, wood polish shades, metal primer paint,
+    waterproofing chemicals, epoxy floor coating, distemper vs emulsion, enamel paint price,
+    heat resistant paint, anti fungal paint, cement paint exterior, paint spray machine,
+
+    /* PLUMBING */
+    cpvc pipes price, pvc drainage pipes, bathroom fittings online, jaguar faucets price,
+    water tank price, sanitary ware catalogue, shower panel designs, concealed plumbing,
+    pipe fittings sizes, water tap brands, kitchen sink price, wash basin designs,
+    flush tank mechanism, plumbing tools kit, pipe welding machine, water pump accessories,
+
+    /* ELECTRICAL */
+    havells wires price, polycab cables catalogue, anchor switches price, led bulbs online,
+    mcb box types, electrical conduit pipes, solar panel accessories, inverter battery price,
+    wiring accessories, extension board online, circuit breaker price, voltage stabilizer,
+    electrical safety gear, cable tray price, earthing materials, electrical testing tools,
+
+    /* TOOLS & HARDWARE */
+    power tools online, bosch drill machine, angle grinder price, construction hand tools,
+    safety helmet price, work gloves online, measuring tape 5m, laser level instrument,
+    masonry tools set, concrete vibrator, scaffolding rental, wheelbarrow price,
+    demolition hammer, tile cutter machine, woodworking tools, welding machine price,
+
+    /* FURNITURE & FIXTURES */
+    pvc furniture online, office chairs price, wooden shelves design, modular kitchen parts,
+    false ceiling materials, door handles catalogue, window fittings price, wardrobe hinges,
+    glass fittings online, furniture polish, kitchen cabinet hardware, sofa mechanism,
+
+    /* SPECIALTY KEYWORDS */
+    small quantity delivery, retail construction supplies, wholesale building materials,
+    contractor discount prices, bulk order discount, construction material calculator,
+    same day delivery, free shipping construction, emi on building materials,
+    best price guarantee, trusted construction vendors, quality building supplies,
+    genuine construction brands, on-site material delivery, construction package deals,
+
+    /* LOCATION SPECIFIC */
+    construction materials mumbai, cement dealers bangalore, steel suppliers delhi,
+    tiles shop hyderabad, plumbing stores chennai, electrical market kolkata,
+    hardware stores pune, building materials ahmedabad
+">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://www.ezzomart.in/">
+    <meta property="og:title" content="EZZO Mart - Buy Construction Materials Online | Cement, Bricks, Tiles, Steel">
+    <meta property="og:description" content="India's #1 Online Construction Marketplace. Buy cement, bricks, tiles, steel, tools & more in small/bulk quantities. Free delivery on ₹5000+ orders.">
+    <meta property="og:image" content="https://www.ezzomart.in/images/social-banner.jpg">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://www.ezzomart.in/">
+    <meta property="twitter:title" content="EZZO Mart - Buy Construction Materials Online | Cement, Bricks, Tiles, Steel">
+    <meta property="twitter:description" content="India's #1 Online Construction Marketplace. Buy cement, bricks, tiles, steel, tools & more in small/bulk quantities.">
+    <meta property="twitter:image" content="https://www.ezzomart.in/images/social-banner.jpg">
+    
+    <!-- Favicons -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#ff6b00">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://www.ezzomart.in/">
+    
+    <!-- Geo & Business Meta -->
+    <meta name="geo.region" content="IN">
+    <meta name="geo.placename" content="India">
+    <meta name="author" content="EZZO Mart">
+    <meta name="robots" content="index, follow">
+    <meta name="revisit-after" content="7 days">
+    <meta name="language" content="English">
+    
+    <!-- Mobile Specific -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="EZZO Mart">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="msapplication-TileColor" content="#FF6B00">
+    <meta name="msapplication-config" content="/browserconfig.xml">
+    
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "HardwareStore",
+      "name": "EZZO Mart",
+      "url": "https://www.ezzomart.in",
+      "logo": "https://www.ezzomart.in/images/logo.png",
+      "description": "Online hardware store selling construction materials in small and bulk quantities",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "123 Construction Plaza",
+        "addressLocality": "Mumbai",
+        "addressRegion": "MH",
+        "postalCode": "400001",
+        "addressCountry": "IN"
+      },
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "telephone": "+91-1234567890",
+        "contactType": "customer service",
+        "email": "support@ezzomart.in",
+        "areaServed": "India"
+      },
+      "priceRange": "₹₹",
+      "openingHours": "Mo,Tu,We,Th,Fr,Sa 08:00-20:00",
+      "sameAs": [
+        "https://facebook.com/ezzomart",
+        "https://twitter.com/ezzomart",
+        "https://instagram.com/ezzomart",
+        "https://linkedin.com/company/ezzomart"
+      ],
+      "hasOfferCatalog": {
+        "@type": "OfferCatalog",
+        "name": "Construction Materials",
+        "itemListElement": [
+          {
+            "@type": "OfferCatalog",
+            "name": "Cement & Concrete",
+            "itemListElement": [
+              {"@type": "Offer", "itemOffered": {"@type": "Product", "name": "OPC 53 Grade Cement"}},
+              {"@type": "Offer", "itemOffered": {"@type": "Product", "name": "Ready Mix Concrete"}}
+            ]
+          },
+          {
+            "@type": "OfferCatalog",
+            "name": "Bricks & Blocks",
+            "itemListElement": [
+              {"@type": "Offer", "itemOffered": {"@type": "Product", "name": "Clay Bricks"}},
+              {"@type": "Offer", "itemOffered": {"@type": "Product", "name": "AAC Blocks"}}
+            ]
+          }
+        ]
+      }
+    }
+    </script>
+    
+    <!-- Product Schema Example (Add for each product page) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org/",
+      "@type": "Product",
+      "name": "UltraTech Cement 53 Grade",
+      "image": "https://www.ezzomart.in/images/ultratech-cement.jpg",
+      "description": "Buy OPC 53 Grade Cement in 1kg to 50kg bags. Free delivery on orders above ₹5000.",
+      "brand": {"@type": "Brand", "name": "UltraTech"},
+      "offers": {
+        "@type": "Offer",
+        "url": "https://www.ezzomart.in/cement/ultratech-53-grade",
+        "priceCurrency": "INR",
+        "price": "420",
+        "priceValidUntil": "2025-12-31",
+        "itemCondition": "https://schema.org/NewCondition",
+        "availability": "https://schema.org/InStock",
+        "shippingDetails": {
+          "@type": "OfferShippingDetails",
+          "shippingRate": {
+            "@type": "MonetaryAmount",
+            "value": "0",
+            "currency": "INR"
+          },
+          "shippingDestination": {
+            "@type": "DefinedRegion",
+            "addressCountry": "IN"
+          },
+          "deliveryTime": {
+            "@type": "ShippingDeliveryTime",
+            "handlingTime": "1",
+            "transitTime": "2",
+            "cutoffTime": "16:00:00"
+          }
+        }
+      }
+    }
+    </script>
+</head>
+<body>
+    <noscript>
+        <div style="text-align:center;padding:20px;background:#ff6b00;color:white;">
+            <h1>JavaScript Required</h1>
+            <p>For the best experience on EZZO Mart, please enable JavaScript in your browser.</p>
+        </div>
+    </noscript>
     <div id="root"></div>
-    <!--
-      This HTML file is a template.
-      If you open it directly in the browser, you will see an empty page.
-
-      You can add webfonts, meta tags, or analytics to this file.
-      The build step will place the bundled scripts into the <body> tag.
-
-      To begin the development, run `npm start` or `yarn start`.
-      To create a production bundle, use `npm run build` or `yarn build`.
-    -->
-  </body>
+    
+    <!-- Preload Critical Resources -->
+    <link rel="preload" href="/fonts/roboto.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/images/hero-banner.webp" as="image">
+    
+    <!-- Fallback for Older Browsers -->
+    <script>
+        if (!('IntersectionObserver' in window)) {
+            var script = document.createElement('script');
+            script.src = 'https://polyfill.io/v3/polyfill.min.js?features=IntersectionObserver';
+            document.head.appendChild(script);
+        }
+    </script>
+</body>
 </html>

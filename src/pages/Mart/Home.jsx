@@ -97,7 +97,7 @@ const Home = () => {
       if (!isLoggedIn) {
         setShowLogin(true);
       }
-    }, 3000);
+    }, 60000);
 
     return () => {
       clearInterval(carouselTimer);
