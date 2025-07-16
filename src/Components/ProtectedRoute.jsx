@@ -29,7 +29,7 @@ export const AdminProtectedRoute = ({ children }) => {
 
 // Vendor-specific protected route
 export const VendorProtectedRoute = ({ children }) => {
-  const user = auth.currentUser;
+  const user = localStorage.getItem('vendorBusiness');
   
   if (!user) {
     return <Navigate to="/vendor-login" replace />;

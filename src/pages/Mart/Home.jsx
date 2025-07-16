@@ -408,7 +408,7 @@ const Home = () => {
       )}
 
       {/* Modified Banner Section */}
-      <div className="relative w-full mt-2 md:mt-0">
+      <div className="relative w-full md:mt-0">
         {/* Mobile Banner */}
         <div className="md:hidden">
           <div className="relative h-[250px] sm:h-[200px] overflow-hidden">
